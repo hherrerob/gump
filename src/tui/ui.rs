@@ -7,7 +7,7 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Modifier, Style, Stylize};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, BorderType, List, ListItem, Paragraph, Widget, Wrap};
+use ratatui::widgets::{Block, BorderType, HighlightSpacing, List, ListItem, Paragraph, Widget, Wrap};
 use ratatui::{DefaultTerminal, Frame};
 
 fn now_ms() -> u128 {
@@ -127,7 +127,8 @@ fn select(f: &mut Frame, w: &mut Wizard, area: Rect) {
     let cat_list = List::new(items)
         .block(block("Categories".into(), cats_focused))
         .highlight_style(t::highlight())
-        .highlight_symbol("▶ ");
+        .highlight_symbol("❯ ")
+        .highlight_spacing(HighlightSpacing::Always);
     f.render_stateful_widget(cat_list, left, &mut w.cat_state);
 
     let visible = w.visible_apps();
@@ -175,7 +176,8 @@ fn select(f: &mut Frame, w: &mut Wizard, area: Rect) {
     let app_list = List::new(items)
         .block(block(title, w.focus == Focus::Apps))
         .highlight_style(t::highlight())
-        .highlight_symbol("▶ ");
+        .highlight_symbol("❯ ")
+        .highlight_spacing(HighlightSpacing::Always);
     f.render_stateful_widget(app_list, right, &mut w.app_state);
 
     // One-line details for the highlighted app.
@@ -335,7 +337,7 @@ fn run(f: &mut Frame, w: &mut Wizard, area: Rect) {
 fn log_line(l: &str) -> Line<'static> {
     if let Some(name) = l.strip_prefix("── ").and_then(|s| s.strip_suffix(" ──")) {
         return Line::from(vec![
-            Span::styled(" ▶ ", t::pill(t::PRIMARY)),
+            Span::styled(" ❯ ", t::pill(t::PRIMARY)),
             Span::styled(format!(" {name}"), t::bold(t::PRIMARY)),
         ]);
     }
