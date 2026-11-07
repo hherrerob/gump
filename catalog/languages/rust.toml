@@ -1,0 +1,15 @@
+name = "Rust"
+description = "rustup with the stable toolchain"
+
+[install.fedora]
+dnf = ["rustup"]
+post = ["rustup-init -y"]
+
+[install.arch]
+pacman = ["rustup"]
+post = ["rustup default stable"]
+
+# Homebrew's rustup is keg-only: add "$(brew --prefix rustup)/bin" to PATH.
+[install.macos]
+brew = ["rustup"]
+post = ['"$(brew --prefix rustup)/bin/rustup" default stable']

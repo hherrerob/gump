@@ -1,0 +1,10 @@
+name = "Alacritty"
+description = "Minimal GPU-accelerated terminal emulator"
+
+[install.fedora]
+dnf = ["alacritty"]
+
+[install.arch]
+pacman = ["alacritty"]
+
+# No macOS install: Homebrew disabled its cask in 2026 and has no formula.

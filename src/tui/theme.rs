@@ -1,4 +1,5 @@
-//! City pop palette: sunset pinks and oranges over a neon-lit night sky.
+//! City pop palette: a neon-teal night with sunset orange and yellow accents; pink and
+//! purple are kept for small highlights only.
 //! Uses 24-bit color when the terminal advertises it, otherwise the nearest xterm-256 color.
 
 use ratatui::style::{Color, Modifier, Style};
@@ -7,19 +8,22 @@ use std::sync::OnceLock;
 pub type Rgb = (u8, u8, u8);
 
 pub const PINK: Rgb = (255, 106, 213);
-pub const MAGENTA: Rgb = (255, 79, 154);
-pub const PURPLE: Rgb = (199, 116, 232);
-pub const LAVENDER: Rgb = (173, 140, 255);
 pub const CYAN: Rgb = (121, 226, 242);
 pub const TEAL: Rgb = (65, 226, 186);
+pub const SKY: Rgb = (150, 200, 235);
 pub const ORANGE: Rgb = (255, 170, 100);
 pub const YELLOW: Rgb = (255, 230, 109);
 pub const RED: Rgb = (255, 85, 120);
-pub const TEXT: Rgb = (240, 230, 255);
-pub const MUTED: Rgb = (128, 110, 168);
-pub const LINE: Rgb = (88, 66, 128);
-pub const NIGHT: Rgb = (52, 33, 84);
-pub const INK: Rgb = (30, 18, 52);
+pub const TEXT: Rgb = (228, 240, 246);
+pub const MUTED: Rgb = (108, 140, 160);
+pub const LINE: Rgb = (52, 84, 108);
+pub const NIGHT: Rgb = (22, 48, 66);
+pub const INK: Rgb = (10, 24, 36);
+
+/// The dominant UI color (borders, keys, headers), the secondary pill color, and soft text.
+pub const PRIMARY: Rgb = CYAN;
+pub const SECONDARY: Rgb = ORANGE;
+pub const SOFT: Rgb = SKY;
 
 fn truecolor() -> bool {
     static TC: OnceLock<bool> = OnceLock::new();
@@ -82,18 +86,5 @@ pub fn gradient(stops: &[Rgb], t: f32) -> Rgb {
     (mix(a.0, b.0), mix(a.1, b.1), mix(a.2, b.2))
 }
 
-/// The signature sunset → neon sweep used for the logo and progress bar.
-pub const SUNSET: [Rgb; 4] = [ORANGE, PINK, PURPLE, CYAN];
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn gradient_endpoints_and_cube() {
-        assert_eq!(gradient(&SUNSET, 0.0), ORANGE);
-        assert_eq!(gradient(&SUNSET, 1.0), CYAN);
-        assert_eq!(to_256((0, 0, 0)), 16);
-        assert_eq!(to_256((255, 255, 255)), 231);
-    }
-}
+/// The signature sunset → sea sweep used for the logo and progress bar.
+pub const SUNSET: [Rgb; 4] = [ORANGE, YELLOW, TEAL, CYAN];

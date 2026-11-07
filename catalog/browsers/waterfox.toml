@@ -1,0 +1,11 @@
+name = "Waterfox"
+description = "Privacy-focused Firefox fork"
+
+[install.fedora]
+flatpak = ["net.waterfox.waterfox"]
+
+[install.arch]
+aur = ["waterfox-bin"]
+
+[install.macos]
+cask = ["waterfox"]

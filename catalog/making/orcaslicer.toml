@@ -1,0 +1,11 @@
+name = "OrcaSlicer"
+description = "Open-source slicer for most 3D printers"
+
+[install.fedora]
+flatpak = ["com.orcaslicer.OrcaSlicer"]
+
+[install.arch]
+aur = ["orca-slicer-bin"]
+
+[install.macos]
+cask = ["orcaslicer"]

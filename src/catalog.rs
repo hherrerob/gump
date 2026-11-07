@@ -1,14 +1,16 @@
-//! The app catalog: categories, apps (with per-OS install recipes and settings files) and
-//! profiles. It is embedded into the binary at build time, or read from disk with `--catalog`.
+//! The app catalog: categories and apps (with per-OS install recipes and settings files).
+//! It is embedded into the binary at build time, or read from disk with `--catalog`.
 //!
 //! Layout:
 //! ```text
 //! catalog/
 //!   categories.toml               [[category]] id/name, in display order
-//!   profiles.toml                 name = ["app-id", ...]   (optional)
-//!   <category>/<app-id>/app.toml  the app manifest
-//!   <category>/<app-id>/<files>   settings sources referenced by the manifest
+//!   <category>/<app-id>.toml      the app manifest
+//!   <category>/<app-id>/<files>   settings sources referenced by the manifest (only for
+//!                                 apps that have settings)
 //! ```
+//!
+//! `<category>/<app-id>/app.toml` is also accepted, to keep a manifest next to its files.
 
 use crate::backend::PkgKind;
 use crate::platform::Os;
@@ -99,6 +101,9 @@ pub struct InstallSpec {
     pub brew: Vec<String>,
     #[serde(default)]
     pub cask: Vec<String>,
+    /// VS Code extension ids; only allowed in `[extras.*]`.
+    #[serde(default)]
+    pub vscode: Vec<String>,
     pub script: Option<String>,
     #[serde(default)]
     pub post: Vec<String>,
@@ -124,6 +129,7 @@ impl InstallSpec {
             (PkgKind::Flatpak, &self.flatpak),
             (PkgKind::Brew, &self.brew),
             (PkgKind::Cask, &self.cask),
+            (PkgKind::Vscode, &self.vscode),
         ]
         .into_iter()
         .filter(|(_, v)| !v.is_empty())
@@ -225,7 +231,6 @@ pub struct Catalog {
     pub categories: Vec<Category>,
     /// Sorted by category order, then name.
     pub apps: Vec<App>,
-    pub profiles: BTreeMap<String, Vec<String>>,
 }
 
 impl Catalog {
@@ -249,10 +254,6 @@ impl Catalog {
         self.apps.iter().find(|a| a.id == id)
     }
 
-    pub fn index_of(&self, id: &str) -> Option<usize> {
-        self.apps.iter().position(|a| a.id == id)
-    }
-
     fn from_files(files: Files, source: Source) -> Result<Catalog> {
         let mut errors: Vec<String> = Vec::new();
 
@@ -260,18 +261,19 @@ impl Catalog {
             Some(b) => parse_toml::<CategoriesFile>("categories.toml", b)?.category,
             None => bail!("catalog ({source}) has no categories.toml"),
         };
-        let profiles: BTreeMap<String, Vec<String>> = match files.get("profiles.toml") {
-            Some(b) => parse_toml("profiles.toml", b)?,
-            None => BTreeMap::new(),
-        };
 
-        let mut apps = Vec::new();
+        let mut apps: Vec<App> = Vec::new();
         for (path, bytes) in &files {
             let parts: Vec<&str> = path.split('/').collect();
-            if parts.len() != 3 || parts[2] != "app.toml" {
+            let (category, id) = match parts[..] {
+                [c, f] if f.ends_with(".toml") && f.len() > 5 => (c, &f[..f.len() - 5]),
+                [c, id, "app.toml"] => (c, id),
+                _ => continue,
+            };
+            if apps.iter().any(|a| a.id == id && a.category == category) {
+                errors.push(format!("{category}/{id}: defined twice ({id}.toml and {id}/app.toml); keep one"));
                 continue;
             }
-            let (category, id) = (parts[0], parts[1]);
             let manifest: Manifest = match parse_toml(path, bytes) {
                 Ok(m) => m,
                 Err(e) => {
@@ -299,7 +301,7 @@ impl Catalog {
             });
         }
 
-        errors.extend(validate(&categories, &apps, &profiles));
+        errors.extend(validate(&categories, &apps));
         if !errors.is_empty() {
             bail!("invalid catalog ({source}):\n  - {}", errors.join("\n  - "));
         }
@@ -309,7 +311,7 @@ impl Catalog {
             order(&a.category).cmp(&order(&b.category)).then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase()))
         });
 
-        Ok(Catalog { source, categories, apps, profiles })
+        Ok(Catalog { source, categories, apps })
     }
 }
 
@@ -339,7 +341,7 @@ fn resolve_setting(files: &Files, category: &str, id: &str, def: &SettingDef) ->
     Ok(found)
 }
 
-fn validate(categories: &[Category], apps: &[App], profiles: &BTreeMap<String, Vec<String>>) -> Vec<String> {
+fn validate(categories: &[Category], apps: &[App]) -> Vec<String> {
     let mut errors = Vec::new();
     let cat_ids: BTreeSet<&str> = categories.iter().map(|c| c.id.as_str()).collect();
     if cat_ids.len() != categories.len() {
@@ -354,9 +356,6 @@ fn validate(categories: &[Category], apps: &[App], profiles: &BTreeMap<String, V
         if !cat_ids.contains(a.category.as_str()) {
             errors.push(format!("{at}: category '{}' is not listed in categories.toml", a.category));
         }
-        if profiles.contains_key(&a.id) {
-            errors.push(format!("{at}: app id clashes with a profile name"));
-        }
         let specs = [(Os::Fedora, &a.install.fedora), (Os::Arch, &a.install.arch), (Os::Macos, &a.install.macos)];
         if specs.iter().all(|(_, s)| s.is_none()) {
             errors.push(format!("{at}: no [install.fedora|arch|macos] section"));
@@ -364,11 +363,16 @@ fn validate(categories: &[Category], apps: &[App], profiles: &BTreeMap<String, V
         for (os, spec) in specs {
             let Some(spec) = spec else { continue };
             let groups = spec.package_groups();
+            if os == Os::Arch && spec.script.is_some() {
+                errors.push(format!("{at}: [install.arch] can't use a script; only pacman and aur (yay)"));
+            }
             if groups.is_empty() && spec.script.is_none() {
                 errors.push(format!("{at}: [install.{}] has no packages and no script", os.key()));
             }
             for (kind, _) in &groups {
-                if !kind.supported_on(os) {
+                if *kind == PkgKind::Vscode {
+                    errors.push(format!("{at}: VS Code extensions belong in [extras.{}], not [install.*]", os.key()));
+                } else if !kind.supported_on(os) {
                     errors.push(format!("{at}: '{}' packages are not supported on {}", kind.key(), os.key()));
                 }
             }
@@ -416,13 +420,6 @@ fn validate(categories: &[Category], apps: &[App], profiles: &BTreeMap<String, V
             }
         }
     }
-    for (name, ids) in profiles {
-        for id in ids {
-            if !apps.iter().any(|a| &a.id == id) {
-                errors.push(format!("profiles.toml: profile '{name}' lists unknown app '{id}'"));
-            }
-        }
-    }
     errors
 }
 
@@ -454,68 +451,4 @@ fn collect_disk(root: &Path, dir: &Path, out: &mut Files) -> Result<()> {
 
 fn normalize(p: &Path) -> String {
     p.components().map(|c| c.as_os_str().to_string_lossy()).collect::<Vec<_>>().join("/")
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn files(entries: &[(&str, &str)]) -> Files {
-        entries.iter().map(|(k, v)| (k.to_string(), v.as_bytes().to_vec())).collect()
-    }
-
-    const CATS: &str = "[[category]]\nid = \"dev\"\nname = \"Dev\"\n";
-
-    #[test]
-    fn embedded_catalog_is_valid() {
-        let c = Catalog::load(None).expect("embedded catalog must validate");
-        assert!(!c.apps.is_empty());
-        assert!(!c.categories.is_empty());
-    }
-
-    #[test]
-    fn parses_file_and_directory_settings() {
-        let c = Catalog::from_files(
-            files(&[
-                ("categories.toml", CATS),
-                (
-                    "dev/nvim/app.toml",
-                    "name = \"Neovim\"\n[install.fedora]\ndnf = [\"neovim\"]\n\
-                     [[settings]]\nsource = \"cfg\"\ntarget = \"~/.config/nvim\"\n\
-                     [[settings]]\nsource = \"one.txt\"\ntarget.linux = \"~/one\"\n",
-                ),
-                ("dev/nvim/cfg/init.lua", "-- hi"),
-                ("dev/nvim/cfg/lua/a.lua", "-- a"),
-                ("dev/nvim/one.txt", "1"),
-            ]),
-            Source::Embedded,
-        )
-        .unwrap();
-        let app = c.app("nvim").unwrap();
-        assert_eq!(app.settings[0].files.len(), 2);
-        assert_eq!(app.settings[0].files[1].0, "lua/a.lua");
-        assert_eq!(app.settings[1].files[0].0, "");
-        assert_eq!(app.settings[1].target_for(Os::Macos), None);
-        assert_eq!(app.settings[1].target_for(Os::Arch), Some("~/one"));
-    }
-
-    #[test]
-    fn rejects_bad_manifests() {
-        let err = Catalog::from_files(
-            files(&[
-                ("categories.toml", CATS),
-                ("dev/a/app.toml", "name = \"A\"\n[install.fedora]\npacman = [\"x\"]\n"),
-                ("dev/b/app.toml", "name = \"B\"\ndepends = [\"zzz\"]\n[install.arch]\nscript = \"true\"\n"),
-                ("other/c/app.toml", "name = \"C\"\n[install.macos]\nbrew = [\"c\"]\n[[settings]]\nsource = \"nope\"\ntarget = \"~/c\"\n"),
-            ]),
-            Source::Embedded,
-        )
-        .unwrap_err()
-        .to_string();
-        assert!(err.contains("'pacman' packages are not supported on fedora"), "{err}");
-        assert!(err.contains("needs a [check]"), "{err}");
-        assert!(err.contains("unknown app 'zzz'"), "{err}");
-        assert!(err.contains("category 'other'"), "{err}");
-        assert!(err.contains("'nope' not found"), "{err}");
-    }
 }

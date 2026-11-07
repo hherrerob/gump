@@ -1,0 +1,11 @@
+name = "Fira Code"
+description = "Monospace font with ligatures"
+
+[install.fedora]
+dnf = ["fira-code-fonts"]
+
+[install.arch]
+pacman = ["ttf-fira-code"]
+
+[install.macos]
+cask = ["font-fira-code"]

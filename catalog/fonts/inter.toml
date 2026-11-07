@@ -1,0 +1,11 @@
+name = "Inter"
+description = "UI sans-serif font"
+
+[install.fedora]
+dnf = ["rsms-inter-fonts"]
+
+[install.arch]
+pacman = ["inter-font"]
+
+[install.macos]
+cask = ["font-inter"]

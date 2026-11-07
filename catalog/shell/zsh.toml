@@ -1,0 +1,18 @@
+name = "zsh"
+description = "Z shell, set as your login shell"
+
+# On install, make zsh the login shell (macOS already uses it).
+[install.fedora]
+dnf = ["zsh"]
+post = ['[ "$(basename "$SHELL")" = zsh ] || sudo usermod -s "$(command -v zsh)" "$USER"']
+
+[install.arch]
+pacman = ["zsh"]
+post = ['[ "$(basename "$SHELL")" = zsh ] || sudo usermod -s "$(command -v zsh)" "$USER"']
+
+[install.macos]
+brew = ["zsh"]
+
+# macOS ships zsh, so it counts as installed there.
+[check]
+command = "zsh"

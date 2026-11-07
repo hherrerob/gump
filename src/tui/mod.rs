@@ -84,7 +84,6 @@ pub struct Wizard<'a> {
     pub app_state: ListState,
     pub filter: String,
     pub filtering: bool,
-    pub profile_popup: Option<ListState>,
     pub review: Option<Result<Plan, String>>,
     pub review_lines: Vec<DescLine>,
     pub review_scroll: u16,
@@ -115,7 +114,6 @@ impl<'a> Wizard<'a> {
             app_state: ListState::default().with_selected(Some(0)),
             filter: String::new(),
             filtering: false,
-            profile_popup: None,
             review: None,
             review_lines: Vec::new(),
             review_scroll: 0,
@@ -153,17 +151,6 @@ impl<'a> Wizard<'a> {
             self.flash = Some(format!("{} is not available on {}", self.cat.apps[i].name, self.os.display()));
         } else if !self.selected.remove(&i) {
             self.selected.insert(i);
-        }
-    }
-
-    fn toggle_all_visible(&mut self) {
-        let avail: Vec<usize> = self.visible_apps().into_iter().filter(|&i| self.status[i].available).collect();
-        if avail.iter().all(|i| self.selected.contains(i)) {
-            for i in avail {
-                self.selected.remove(&i);
-            }
-        } else {
-            self.selected.extend(avail);
         }
     }
 
@@ -240,29 +227,6 @@ impl<'a> Wizard<'a> {
     }
 
     fn on_select_key(&mut self, k: KeyEvent) {
-        if let Some(state) = &mut self.profile_popup {
-            let names: Vec<&String> = self.cat.profiles.keys().collect();
-            match k.code {
-                KeyCode::Esc | KeyCode::Char('p') => self.profile_popup = None,
-                KeyCode::Up | KeyCode::Char('k') => state.select_previous(),
-                KeyCode::Down | KeyCode::Char('j') => state.select_next(),
-                KeyCode::Enter | KeyCode::Char(' ') => {
-                    if let Some(name) = state.selected().and_then(|i| names.get(i)) {
-                        let mut added = 0;
-                        for id in &self.cat.profiles[*name] {
-                            let i = self.cat.index_of(id).expect("validated");
-                            if self.status[i].available && self.selected.insert(i) {
-                                added += 1;
-                            }
-                        }
-                        self.flash = Some(format!("Profile '{name}': {added} app(s) added"));
-                    }
-                    self.profile_popup = None;
-                }
-                _ => {}
-            }
-            return;
-        }
 
         if self.filtering {
             match k.code {
@@ -315,30 +279,19 @@ impl<'a> Wizard<'a> {
                     self.app_state.select(Some(next));
                 }
             },
-            KeyCode::Char(' ') => match self.focus {
-                Focus::Apps => {
-                    if let Some(i) = self.current_app() {
-                        self.toggle(i);
-                    }
+            KeyCode::Char(' ') if self.focus == Focus::Apps => {
+                if let Some(i) = self.current_app() {
+                    self.toggle(i);
                 }
-                Focus::Categories => self.toggle_all_visible(),
-            },
-            KeyCode::Char('a') => self.toggle_all_visible(),
+            }
             KeyCode::Char('c') => self.selected.clear(),
             KeyCode::Char('/') => {
                 self.filtering = true;
                 self.focus = Focus::Apps;
             }
-            KeyCode::Char('p') => {
-                if self.cat.profiles.is_empty() {
-                    self.flash = Some("No profiles defined in profiles.toml".into());
-                } else {
-                    self.profile_popup = Some(ListState::default().with_selected(Some(0)));
-                }
-            }
             KeyCode::Enter => {
                 if self.selected.is_empty() {
-                    self.flash = Some("Select at least one app (Space), or pick a profile (p)".into());
+                    self.flash = Some("Select at least one app (Space)".into());
                 } else {
                     self.build_review();
                     self.screen = Screen::Review;
@@ -363,7 +316,7 @@ impl<'a> Wizard<'a> {
                     let mut lines = vec![
                         Line::raw(""),
                         Line::from(vec![
-                            Span::styled(" gump ", theme::pill(theme::PINK)),
+                            Span::styled(" gump ", theme::pill(theme::PRIMARY)),
                             Span::styled(format!(" {changed} changed "), theme::pill(color)),
                             Span::styled(format!("  {unchanged} unchanged · {failed} failed"), theme::fg(theme::TEXT)),
                             Span::styled(dry, theme::bold(theme::ORANGE)),
@@ -382,7 +335,7 @@ impl<'a> Wizard<'a> {
                     let seed = (changed * 7 + unchanged * 3) + self.finished.len();
                     lines.push(Line::styled(
                         format!("  “{}”", art::sign_off(failed > 0, seed)),
-                        theme::fg(theme::LAVENDER).italic(),
+                        theme::fg(theme::SOFT).italic(),
                     ));
                     self.finished.extend(lines);
                 }

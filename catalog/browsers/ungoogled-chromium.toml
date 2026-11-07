@@ -1,0 +1,11 @@
+name = "Ungoogled Chromium"
+description = "Chromium without Google services"
+
+[install.fedora]
+flatpak = ["io.github.ungoogled_software.ungoogled_chromium"]
+
+[install.arch]
+aur = ["ungoogled-chromium-bin"]
+
+[install.macos]
+cask = ["ungoogled-chromium"]

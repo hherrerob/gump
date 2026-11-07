@@ -39,9 +39,9 @@ enum Cmd {
     },
     /// Show what is installed and the state of each app's settings files.
     Status,
-    /// Install apps or profiles without the wizard.
+    /// Install apps without the wizard.
     Install {
-        /// App ids or profile names.
+        /// App ids.
         #[arg(required = true)]
         targets: Vec<String>,
         /// Don't ask for confirmation.
@@ -121,12 +121,6 @@ fn list(cat: &Catalog, os: platform::Os, only: Option<&str>) -> Result<()> {
             println!("  {:<22} {}{cfg}{avail}", a.id, a.description);
         }
         println!();
-    }
-    if !cat.profiles.is_empty() {
-        println!("Profiles");
-        for (name, ids) in &cat.profiles {
-            println!("  {:<22} {}", name, ids.join(", "));
-        }
     }
     Ok(())
 }

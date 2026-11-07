@@ -1,8 +1,0 @@
-# Managed by gump. Edit catalog/terminal/ghostty/config in the gump repo.
-font-family = JetBrainsMono Nerd Font
-font-size = 13
-theme = dark:Catppuccin Mocha,light:Catppuccin Latte
-window-padding-x = 8
-window-padding-y = 8
-copy-on-select = clipboard
-confirm-close-surface = false

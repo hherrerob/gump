@@ -1,0 +1,11 @@
+name = "Node.js"
+description = "JavaScript runtime with npm"
+
+[install.fedora]
+dnf = ["nodejs", "nodejs-npm"]
+
+[install.arch]
+pacman = ["nodejs", "npm"]
+
+[install.macos]
+brew = ["node"]

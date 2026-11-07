@@ -1,0 +1,21 @@
+name = "Orca"
+description = "Desktop workspace for running coding agents in parallel (Stably)"
+
+# Fedora: the RPM from the latest GitHub release (no repo, so no automatic updates via dnf).
+[install.fedora]
+script = '''
+set -e
+url=$(curl -fsSL https://api.github.com/repos/stablyai/orca/releases/latest \
+  | grep -o "https://[^\"]*/orca-ide-[^\"]*\.$(uname -m)\.rpm" | head -1)
+[ -n "$url" ] || { echo "no Orca RPM found for $(uname -m)" >&2; exit 1; }
+sudo dnf install -y "$url"
+'''
+
+[install.arch]
+aur = ["stably-orca-bin"]
+
+[install.macos]
+cask = ["stablyai/orca/orca"]
+
+[check]
+shell = "rpm -q orca-ide"

@@ -1,0 +1,11 @@
+name = "fastfetch"
+description = "System info at a glance"
+
+[install.fedora]
+dnf = ["fastfetch"]
+
+[install.arch]
+pacman = ["fastfetch"]
+
+[install.macos]
+brew = ["fastfetch"]

@@ -1,0 +1,11 @@
+name = "Bambu Studio"
+description = "Slicer for Bambu Lab printers"
+
+[install.fedora]
+flatpak = ["com.bambulab.BambuStudio"]
+
+[install.arch]
+aur = ["bambustudio-bin"]
+
+[install.macos]
+cask = ["bambu-studio"]

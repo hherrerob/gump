@@ -1,12 +1,12 @@
-//! The banner printed above the wizard: Forrest's Monument Valley road at sunset next to the GUMP logo.
-//! The skyline is pixel art drawn with half blocks (two pixels per terminal cell).
+//! The banner printed above the wizard: the drill sergeant's campaign hat next to the GUMP logo.
+//! The art is pixel art drawn with half blocks (two pixels per terminal cell).
 
 use super::theme::{self, Rgb};
 use ratatui::style::{Style, Stylize};
 use ratatui::text::{Line, Span};
 
 const W: usize = 36;
-const H: usize = 16;
+const H: usize = 18;
 
 const LOGO: [&str; 6] = [
     " ██████╗ ██╗   ██╗███╗   ███╗██████╗ ",
@@ -17,62 +17,90 @@ const LOGO: [&str; 6] = [
     " ╚═════╝  ╚═════╝ ╚═╝     ╚═╝╚═╝     ",
 ];
 
-/// The Monument Valley road where Forrest stopped running: a striped sunset between the
-/// buttes, the highway running to the horizon, and the white feather drifting overhead.
-/// `None` is transparent.
-fn skyline() -> [[Option<Rgb>; W]; H] {
-    const HORIZON: usize = 11;
+// The drill sergeant's campaign hat (canvas H is sized so the hat touches its top and bottom rows), seen from the front and slightly above: a wide flat brim,
+// a tall crown pinched into a "Montana peak", a leather band and a brass badge.
+const CX: f32 = 18.0; // horizontal center
+const BRIM: (f32, f32, f32) = (12.5, 17.5, 4.5); // center y, x radius, y radius
+const CROWN_BASE: (f32, f32, f32) = (11.0, 8.5, 2.5); // center y, half width, curve depth
+const PEAK_Y: f32 = 0.5; // tip of the peak
+const SHOULDER: (f32, f32) = (3.5, 7.5); // y and half width where the peak meets the sides
+
+fn in_ellipse(x: f32, y: f32, cy: f32, rx: f32, ry: f32) -> bool {
+    let (dx, dy) = ((x - CX) / rx, (y - cy) / ry);
+    dx * dx + dy * dy <= 1.0
+}
+
+fn pixels() -> [[Option<Rgb>; W]; H] {
     let mut px = [[None; W]; H];
-    // Striped retro sun sinking into the horizon.
-    let (cx, cy, r) = (18.0f32, 11.5f32, 8.5f32);
-    for (y, row) in px.iter_mut().enumerate().take(HORIZON) {
-        if [6, 8, 10].contains(&y) {
-            continue;
-        }
-        let color = theme::gradient(&[theme::YELLOW, theme::ORANGE, theme::PINK, theme::MAGENTA], y as f32 / 10.0);
+    let dim = |c: Rgb, t: f32| theme::gradient(&[c, theme::INK], t);
+    let (by, brx, bry) = BRIM;
+    let (cy, chw, depth) = CROWN_BASE;
+
+    for (y, row) in px.iter_mut().enumerate() {
         for (x, p) in row.iter_mut().enumerate() {
-            let (dx, dy) = (x as f32 + 0.5 - cx, y as f32 + 0.5 - cy);
-            if dx * dx + dy * dy <= r * r {
-                *p = Some(color);
+            let (fx, fy) = (x as f32 + 0.5, y as f32 + 0.5);
+            let dx = fx - CX;
+
+            // Crown: sides taper from the base up to the shoulders, then rise to the peak.
+            let t = ((cy - fy) / (cy - SHOULDER.0)).clamp(0.0, 1.0);
+            let half = chw + (SHOULDER.1 - chw) * t;
+            let top = PEAK_Y + dx.abs() * (SHOULDER.0 - PEAK_Y) / SHOULDER.1;
+            let curve = depth * (1.0 - (dx / chw).powi(2)).max(0.0).sqrt();
+            let bottom = cy + curve;
+            if dx.abs() <= half && fy >= top && fy <= bottom {
+                let band = fy > bottom - 2.5;
+                let crease = dx.abs() < 0.6 && fy < SHOULDER.0 + 3.0;
+                // The two front dents of the Montana peak, shaded either side of the crease.
+                let dent = dx.abs() < 3.0 - (fy - top) * 0.5 && fy < SHOULDER.0 + 2.5;
+                *p = Some(if band {
+                    dim(theme::ORANGE, if dx < 0.0 { 0.35 } else { 0.55 })
+                } else if crease {
+                    dim(theme::TEAL, 0.65)
+                } else if dent {
+                    dim(theme::TEAL, if dx < 0.0 { 0.3 } else { 0.5 })
+                } else if dx < -half + 1.0 {
+                    theme::CYAN
+                } else if dx < 0.0 {
+                    theme::TEAL
+                } else {
+                    dim(theme::TEAL, 0.35)
+                });
+                continue;
+            }
+
+            // Brim: the top surface, a bright front edge, and a sliver of shaded underside.
+            if in_ellipse(fx, fy, by, brx, bry) {
+                let edge = !in_ellipse(fx, fy + 1.0, by, brx, bry);
+                *p = Some(if edge {
+                    theme::CYAN
+                } else {
+                    dim(theme::TEAL, 0.2 + 0.25 * ((dx / brx) + 1.0) / 2.0)
+                });
+            } else if in_ellipse(fx, fy - 1.0, by, brx, bry) {
+                *p = Some(dim(theme::TEAL, 0.7));
             }
         }
     }
-    // The mittens and spires: (left, right, top). Flat tops with a sunlit rim, flaring at the base.
-    for (x0, x1, top) in [(2usize, 5usize, 4usize), (7, 7, 7), (28, 31, 3), (26, 26, 6), (34, 34, 8)] {
-        for (y, row) in px.iter_mut().enumerate().take(HORIZON).skip(top) {
-            let flare = usize::from(y + 2 >= HORIZON);
-            for p in &mut row[x0.saturating_sub(flare)..=(x1 + flare).min(W - 1)] {
-                *p = Some(if y == top { theme::PURPLE } else { theme::LINE });
-            }
-        }
-    }
-    // Horizon glow, then desert floor.
-    for p in px[HORIZON].iter_mut() {
-        *p = Some(theme::PINK);
-    }
-    for row in px.iter_mut().skip(HORIZON + 1) {
-        row.fill(Some(theme::NIGHT));
-    }
-    // The highway, widening toward the viewer, with a dashed yellow center line.
-    for (y, row) in px.iter_mut().enumerate().skip(HORIZON + 1) {
-        let half = 1.0 + (y - HORIZON - 1) as f32 * 1.8;
+
+    // Brass badge on the front of the crown, just above the band.
+    let badge_y = cy + depth - 4.5;
+    for (y, row) in px.iter_mut().enumerate() {
         for (x, p) in row.iter_mut().enumerate() {
-            let d = (x as f32 + 0.5 - 18.0).abs();
-            if d <= half {
-                *p = Some(if d < 1.0 && y % 2 == 1 && y > HORIZON + 1 { theme::YELLOW } else { theme::INK });
+            let (dx, dy) = (x as f32 + 0.5 - CX, y as f32 + 0.5 - badge_y);
+            let r2 = dx * dx + dy * dy * 1.0;
+            if r2 <= 0.8 {
+                *p = Some(theme::ORANGE);
+            } else if r2 <= 3.2 {
+                *p = Some(theme::YELLOW);
             }
         }
-    }
-    // The feather: a quill with its vane, drifting down on the left.
-    for (x, y) in [(10, 0), (11, 0), (8, 1), (9, 1), (10, 1), (7, 2), (8, 2), (6, 3)] {
-        px[y][x] = Some(theme::TEXT);
     }
     px
 }
 
 /// Render pixel rows pairwise into half-block cells.
 fn pixel_lines() -> Vec<Line<'static>> {
-    let px = skyline();
+    let px = pixels();
     (0..H / 2)
         .map(|row| {
             let spans: Vec<Span> = (0..W)
@@ -116,7 +144,7 @@ pub fn banner(width: u16, info: Vec<Span<'static>>) -> Vec<Line<'static>> {
         vec![
             Line::from(Span::styled(
                 "“Gump! Why'd you put that together so quickly?”",
-                theme::fg(theme::LAVENDER).italic(),
+                theme::fg(theme::SOFT).italic(),
             )),
             Line::from(Span::styled("“You told me to, Drill Sergeant.”", theme::fg(theme::MUTED).italic())),
         ]
@@ -126,22 +154,22 @@ pub fn banner(width: u16, info: Vec<Span<'static>>) -> Vec<Line<'static>> {
     let gap = "   ";
 
     let mut out = if width >= W + gap.len() + logo_w {
-        // Skyline on the left; logo and the drill sergeant exchange on the right.
-        let right = logo_lines().into_iter().chain(quote());
-        let mut v: Vec<Line> = pixel_lines()
-            .into_iter()
-            .zip(right)
-            .map(|(art, text)| {
-                let mut spans = art.spans;
+        // Hat on the left; logo, the drill sergeant exchange and the info line on the right.
+        // The hat fills its canvas top to bottom, so the logo lines up with the peak and the
+        // info line with the brim.
+        let mut right: Vec<Line> = logo_lines().into_iter().chain(quote()).chain([Line::from(info)]).collect();
+        let pad = (H / 2).saturating_sub(right.len()) / 2;
+        right.splice(0..0, std::iter::repeat_n(Line::raw(""), pad));
+        let art = pixel_lines();
+        let blank = Line::raw(" ".repeat(W));
+        return (0..art.len().max(right.len()))
+            .map(|i| {
+                let mut spans = art.get(i).unwrap_or(&blank).spans.clone();
                 spans.push(Span::raw(gap));
-                spans.extend(text.spans);
+                spans.extend(right.get(i).map(|l| l.spans.clone()).unwrap_or_default());
                 Line::from(spans)
             })
             .collect();
-        let mut info_line = vec![Span::raw(" ".repeat(W + gap.len()))];
-        info_line.extend(info);
-        v.push(Line::from(info_line));
-        return v;
     } else if width >= logo_w {
         logo_lines().into_iter().chain(quote()).collect()
     } else {

@@ -1,0 +1,23 @@
+name = "OpenCode"
+description = "Open-source coding agent for any model provider"
+
+# Fedora: the binary from the latest GitHub release into ~/.local/bin.
+[install.fedora]
+script = '''
+set -e
+case "$(uname -m)" in x86_64) arch=x64 ;; aarch64) arch=arm64 ;; *) echo "unsupported arch" >&2; exit 1 ;; esac
+tmp=$(mktemp -d)
+curl -fsSL "https://github.com/anomalyco/opencode/releases/latest/download/opencode-linux-$arch.tar.gz" | tar -xz -C "$tmp"
+install -Dm755 "$tmp/opencode" "$HOME/.local/bin/opencode"
+rm -rf "$tmp"
+'''
+
+[install.arch]
+pacman = ["opencode"]
+
+[install.macos]
+brew = ["opencode"]
+
+[check]
+command = "opencode"
+path = "~/.local/bin/opencode"

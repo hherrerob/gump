@@ -1,0 +1,11 @@
+name = "kitty"
+description = "GPU-accelerated terminal emulator"
+
+[install.fedora]
+dnf = ["kitty"]
+
+[install.arch]
+pacman = ["kitty"]
+
+[install.macos]
+cask = ["kitty"]

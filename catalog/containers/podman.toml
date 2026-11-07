@@ -1,0 +1,11 @@
+name = "Podman"
+description = "Daemonless containers"
+
+[install.fedora]
+dnf = ["podman"]
+
+[install.arch]
+pacman = ["podman"]
+
+[install.macos]
+brew = ["podman"]

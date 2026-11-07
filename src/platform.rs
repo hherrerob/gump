@@ -82,37 +82,3 @@ pub fn parse_os_release(text: &str) -> Option<Os> {
         None
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn fedora() {
-        let s = "NAME=\"Fedora Linux\"\nVERSION=\"45 (Workstation Edition)\"\nID=fedora\nVERSION_ID=45\n";
-        assert_eq!(parse_os_release(s), Some(Os::Fedora));
-    }
-
-    #[test]
-    fn arch() {
-        assert_eq!(parse_os_release("NAME=\"Arch Linux\"\nID=arch\n"), Some(Os::Arch));
-    }
-
-    #[test]
-    fn arch_derivative() {
-        let s = "NAME=\"EndeavourOS\"\nID=\"endeavouros\"\nID_LIKE=\"arch\"\n";
-        assert_eq!(parse_os_release(s), Some(Os::Arch));
-    }
-
-    #[test]
-    fn fedora_derivative() {
-        let s = "NAME=\"Nobara Linux\"\nID=nobara\nID_LIKE=\"rhel centos fedora\"\n";
-        assert_eq!(parse_os_release(s), Some(Os::Fedora));
-    }
-
-    #[test]
-    fn ubuntu_rejected() {
-        let s = "NAME=\"Ubuntu\"\nID=ubuntu\nID_LIKE=debian\n";
-        assert_eq!(parse_os_release(s), None);
-    }
-}

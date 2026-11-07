@@ -1,0 +1,11 @@
+name = "tmux"
+description = "Terminal multiplexer"
+
+[install.fedora]
+dnf = ["tmux"]
+
+[install.arch]
+pacman = ["tmux"]
+
+[install.macos]
+brew = ["tmux"]

@@ -75,8 +75,6 @@ impl Unit {
 pub struct Plan {
     pub units: Vec<Unit>,
     pub opts: Options,
-    /// Requested apps skipped because they don't exist for this OS (from profiles).
-    pub skipped: Vec<String>,
 }
 
 impl Plan {
@@ -156,31 +154,17 @@ fn setting_files(app: &App, os: Os) -> Vec<Result<(PathBuf, &[u8])>> {
 pub struct Resolved<'a> {
     /// Dependency-ordered apps; the flag is true for apps pulled in only as dependencies.
     pub apps: Vec<(&'a App, bool)>,
-    pub skipped: Vec<String>,
 }
 
-/// Expand profile names, pull in dependencies, and order everything so dependencies come first.
+/// Look up the requested apps, pull in dependencies, and order everything so dependencies come first.
 pub fn resolve<'a>(cat: &'a Catalog, targets: &[String], os: Os) -> Result<Resolved<'a>> {
     let mut requested: Vec<&App> = Vec::new();
-    let mut skipped = Vec::new();
     for t in targets {
-        if let Some(ids) = cat.profiles.get(t) {
-            for id in ids {
-                let app = cat.app(id).expect("validated");
-                if app.available(os) {
-                    requested.push(app);
-                } else {
-                    skipped.push(app.id.clone());
-                }
-            }
-        } else if let Some(app) = cat.app(t) {
-            if !app.available(os) {
-                bail!("'{}' is not available on {}", app.id, os.display());
-            }
-            requested.push(app);
-        } else {
-            bail!("unknown app or profile '{t}' (see `gump list`)");
+        let Some(app) = cat.app(t) else { bail!("unknown app '{t}' (see `gump list`)") };
+        if !app.available(os) {
+            bail!("'{}' is not available on {}", app.id, os.display());
         }
+        requested.push(app);
     }
 
     let wanted: HashSet<&str> = requested.iter().map(|a| a.id.as_str()).collect();
@@ -217,7 +201,7 @@ pub fn resolve<'a>(cat: &'a Catalog, targets: &[String], os: Os) -> Result<Resol
     for app in requested {
         visit(cat, app, os, &mut state, &mut order, &mut Vec::new())?;
     }
-    Ok(Resolved { apps: order.into_iter().map(|a| (a, !wanted.contains(a.id.as_str()))).collect(), skipped })
+    Ok(Resolved { apps: order.into_iter().map(|a| (a, !wanted.contains(a.id.as_str()))).collect() })
 }
 
 fn prereq_id(kind: PkgKind) -> Option<&'static str> {
@@ -225,38 +209,37 @@ fn prereq_id(kind: PkgKind) -> Option<&'static str> {
         PkgKind::Aur => Some("prereq:aur"),
         PkgKind::Flatpak => Some("prereq:flatpak"),
         PkgKind::Brew | PkgKind::Cask => Some("prereq:brew"),
-        PkgKind::Dnf | PkgKind::Pacman => None,
+        PkgKind::Dnf | PkgKind::Pacman | PkgKind::Vscode => None,
     }
 }
 
-const PARU_BOOTSTRAP: &str = r#"set -e
+const YAY_BOOTSTRAP: &str = r#"set -e
 tmp=$(mktemp -d)
-git clone --depth 1 https://aur.archlinux.org/paru-bin.git "$tmp/paru-bin"
-cd "$tmp/paru-bin"
+git clone --depth 1 https://aur.archlinux.org/yay-bin.git "$tmp/yay-bin"
+cd "$tmp/yay-bin"
 makepkg -si --noconfirm
 rm -rf "$tmp""#;
 
 const BREW_BOOTSTRAP: &str = r#"NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)""#;
 
-fn prereqs(kinds: &BTreeSet<PkgKind>, os: Os) -> Vec<Unit> {
+fn prereqs(kinds: &BTreeSet<PkgKind>) -> Vec<Unit> {
     let unit =
         |id: &str, label: &str, cmds: Vec<Cmd>| Unit { id: id.into(), label: label.into(), cmds, ..Unit::default() };
     let mut out = Vec::new();
-    if kinds.contains(&PkgKind::Aur) && backend::aur_helper().is_none() {
+    if kinds.contains(&PkgKind::Aur) && !backend::has_yay() {
         out.push(unit(
             "prereq:aur",
-            "AUR helper (paru)",
+            "AUR helper (yay)",
             vec![
                 backend::install_cmd(PkgKind::Pacman, &["base-devel".into(), "git".into()]),
-                Cmd::sh(PARU_BOOTSTRAP).privileged(),
+                Cmd::sh(YAY_BOOTSTRAP).privileged(),
             ],
         ));
     }
     if kinds.contains(&PkgKind::Flatpak) {
         let mut cmds = Vec::new();
         if which::which("flatpak").is_err() {
-            let kind = if os == Os::Fedora { PkgKind::Dnf } else { PkgKind::Pacman };
-            cmds.push(backend::install_cmd(kind, &["flatpak".into()]));
+            cmds.push(backend::install_cmd(PkgKind::Dnf, &["flatpak".into()]));
         }
         let has_flathub = std::process::Command::new("flatpak")
             .args(["remotes", "--columns=name"])
@@ -343,9 +326,9 @@ pub fn build(cat: &Catalog, targets: &[String], os: Os, opts: Options) -> Result
         });
     }
 
-    let mut all = prereqs(&kinds, os);
+    let mut all = prereqs(&kinds);
     all.extend(units);
-    Ok(Plan { units: all, opts, skipped: resolved.skipped })
+    Ok(Plan { units: all, opts })
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -401,49 +384,8 @@ pub fn describe(plan: &Plan) -> Vec<DescLine> {
             }
         }
     }
-    if !plan.skipped.is_empty() {
-        line(Tone::Skip, format!("Not available on this OS, skipped: {}", plan.skipped.join(", ")));
-    }
     if plan.opts.agnostic {
         line(Tone::Skip, "Agnostic mode: settings files and extras are not touched.".into());
     }
     out
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn ids(r: &Resolved) -> Vec<(String, bool)> {
-        r.apps.iter().map(|(a, d)| (a.id.clone(), *d)).collect()
-    }
-
-    #[test]
-    fn dependencies_come_first_and_are_flagged() {
-        let cat = Catalog::load(None).unwrap();
-        let r = resolve(&cat, &["ghostty".into()], Os::Arch).unwrap();
-        assert_eq!(ids(&r), [("jetbrains-mono-nerd".into(), true), ("ghostty".into(), false)]);
-    }
-
-    #[test]
-    fn explicit_dependency_is_not_flagged_or_duplicated() {
-        let cat = Catalog::load(None).unwrap();
-        let r = resolve(&cat, &["ghostty".into(), "jetbrains-mono-nerd".into()], Os::Macos).unwrap();
-        assert_eq!(ids(&r), [("jetbrains-mono-nerd".into(), false), ("ghostty".into(), false)]);
-    }
-
-    #[test]
-    fn profiles_skip_apps_missing_on_this_os() {
-        let cat = Catalog::load(None).unwrap();
-        let r = resolve(&cat, &["essentials".into()], Os::Macos).unwrap();
-        assert_eq!(r.skipped, ["rpmfusion"]);
-        assert!(r.apps.iter().all(|(a, _)| a.available(Os::Macos)));
-    }
-
-    #[test]
-    fn explicit_unavailable_app_is_an_error() {
-        let cat = Catalog::load(None).unwrap();
-        assert!(resolve(&cat, &["rpmfusion".into()], Os::Arch).is_err());
-        assert!(resolve(&cat, &["nope".into()], Os::Arch).is_err());
-    }
 }

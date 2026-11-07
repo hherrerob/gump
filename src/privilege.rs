@@ -45,7 +45,7 @@ pub fn acquire() -> Result<()> {
 }
 
 /// A directory holding a `sudo` wrapper that always passes `-n`. It is put first on PATH for
-/// every child, so scripts and tools like paru/makepkg fail instead of prompting.
+/// every child, so scripts and tools like yay/makepkg fail instead of prompting.
 pub fn shim_dir() -> Option<PathBuf> {
     let dir = settings::state_dir().ok()?.join("shim");
     let script = format!("#!/bin/sh\nexec {} -n \"$@\"\n", real_sudo());

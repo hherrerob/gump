@@ -1,0 +1,23 @@
+name = "Codex"
+description = "OpenAI's coding agent in the terminal"
+
+# Fedora: the static binary from the latest GitHub release into ~/.local/bin.
+[install.fedora]
+script = '''
+set -e
+arch=$(uname -m)
+tmp=$(mktemp -d)
+curl -fsSL "https://github.com/openai/codex/releases/latest/download/codex-$arch-unknown-linux-musl.tar.gz" | tar -xz -C "$tmp"
+install -Dm755 "$tmp/codex-$arch-unknown-linux-musl" "$HOME/.local/bin/codex"
+rm -rf "$tmp"
+'''
+
+[install.arch]
+pacman = ["openai-codex"]
+
+[install.macos]
+cask = ["codex"]
+
+[check]
+command = "codex"
+path = "~/.local/bin/codex"

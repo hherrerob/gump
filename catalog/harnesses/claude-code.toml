@@ -1,0 +1,16 @@
+name = "Claude Code"
+description = "Anthropic's coding agent in the terminal"
+
+# Fedora: Anthropic's native installer (~/.local/bin/claude, self-updating).
+[install.fedora]
+script = "curl -fsSL https://claude.ai/install.sh | bash"
+
+[install.arch]
+aur = ["claude-code"]
+
+[install.macos]
+cask = ["claude-code"]
+
+[check]
+command = "claude"
+path = "~/.local/bin/claude"

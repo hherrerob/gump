@@ -1,0 +1,11 @@
+name = "Go"
+description = "Go toolchain"
+
+[install.fedora]
+dnf = ["golang"]
+
+[install.arch]
+pacman = ["go"]
+
+[install.macos]
+brew = ["go"]

@@ -1,0 +1,26 @@
+name = "PlatformIO"
+description = "Embedded toolchain for ESP32 and friends (pio CLI)"
+
+# Fedora: installed as a uv tool, plus udev rules and the dialout group for serial access.
+[install.fedora]
+script = '''
+set -e
+command -v uv >/dev/null || sudo dnf install -y uv
+uv tool install platformio
+curl -fsSL https://raw.githubusercontent.com/platformio/platformio-core/develop/platformio/assets/system/99-platformio-udev.rules \
+  | sudo tee /etc/udev/rules.d/99-platformio-udev.rules >/dev/null
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+sudo usermod -aG dialout "$USER"
+'''
+
+[install.arch]
+pacman = ["platformio-core", "platformio-core-udev"]
+post = ['sudo usermod -aG uucp "$USER"']
+
+[install.macos]
+brew = ["platformio"]
+
+[check]
+command = "pio"
+path = "~/.local/bin/pio"

@@ -4,10 +4,10 @@ use crate::executor::Outcome;
 use crate::plan::{SettingsBadge, Tone, UnitKind};
 use anyhow::Result;
 use ratatui::buffer::Buffer;
-use ratatui::layout::{Constraint, Flex, Layout, Rect};
+use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Modifier, Style, Stylize};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, BorderType, Clear, List, ListItem, Paragraph, Widget, Wrap};
+use ratatui::widgets::{Block, BorderType, List, ListItem, Paragraph, Widget, Wrap};
 use ratatui::{DefaultTerminal, Frame};
 
 fn now_ms() -> u128 {
@@ -28,9 +28,7 @@ pub fn draw(f: &mut Frame, w: &mut Wizard) {
             ("↑↓", "move"),
             ("←→", "pane"),
             ("space", "toggle"),
-            ("a", "all"),
             ("/", "search"),
-            ("p", "profile"),
             ("c", "clear"),
             ("enter", "review"),
             ("q", "quit"),
@@ -62,7 +60,7 @@ fn hints(keys: &[(&str, &str)]) -> Line<'static> {
         if i > 0 {
             spans.push(Span::styled("  ", t::fg(t::LINE)));
         }
-        spans.push(Span::styled(k.to_string(), t::bold(t::PINK)));
+        spans.push(Span::styled(k.to_string(), t::bold(t::PRIMARY)));
         spans.push(Span::styled(format!(" {d}"), t::fg(t::MUTED)));
     }
     Line::from(spans)
@@ -70,7 +68,7 @@ fn hints(keys: &[(&str, &str)]) -> Line<'static> {
 
 fn block(title: String, focused: bool) -> Block<'static> {
     let (border, title_style) =
-        if focused { (t::fg(t::PINK), t::bold(t::PINK)) } else { (t::fg(t::LINE), t::bold(t::LAVENDER)) };
+        if focused { (t::fg(t::PRIMARY), t::bold(t::PRIMARY)) } else { (t::fg(t::LINE), t::bold(t::SOFT)) };
     Block::bordered()
         .border_type(BorderType::Rounded)
         .border_style(border)
@@ -92,8 +90,8 @@ fn flag_spans(w: &Wizard) -> Vec<Span<'static>> {
 /// `▌GUMP▐ title · detail      flags`
 fn header(f: &mut Frame, area: Rect, title: &str, detail: String, w: &Wizard) {
     let left = Line::from(vec![
-        Span::styled(" gump ", t::pill(t::PINK)),
-        Span::styled(format!(" {title} "), t::pill(t::PURPLE)),
+        Span::styled(" gump ", t::pill(t::PRIMARY)),
+        Span::styled(format!(" {title} "), t::pill(t::SECONDARY)),
         Span::styled(format!("  {detail}"), t::fg(t::TEXT)),
     ]);
     let right = Line::from(flag_spans(w)).right_aligned();
@@ -141,7 +139,7 @@ fn select(f: &mut Frame, w: &mut Wizard, area: Rect) {
             let (mark, name_style) = if !s.available {
                 (Span::styled("·  ", t::fg(t::LINE)), t::fg(t::LINE))
             } else if w.selected.contains(&i) {
-                (Span::styled("◉  ", t::bold(t::PINK)), t::bold(t::TEXT))
+                (Span::styled("◉  ", t::bold(t::PRIMARY)), t::bold(t::TEXT))
             } else {
                 (Span::styled("○  ", t::fg(t::MUTED)), t::fg(t::TEXT))
             };
@@ -155,7 +153,7 @@ fn select(f: &mut Frame, w: &mut Wizard, area: Rect) {
                 let badge: Option<(&str, Rgb)> = match s.settings {
                     SettingsBadge::None => None,
                     SettingsBadge::Missing => Some(("◆ settings new", t::ORANGE)),
-                    SettingsBadge::Differs => Some(("◆ settings yours", t::PURPLE)),
+                    SettingsBadge::Differs => Some(("◆ settings yours", t::PINK)),
                     SettingsBadge::Identical => Some(("◆ settings synced", t::CYAN)),
                 };
                 if let Some((txt, col)) = badge {
@@ -185,7 +183,7 @@ fn select(f: &mut Frame, w: &mut Wizard, area: Rect) {
         Some(i) => {
             let a = &w.cat.apps[i];
             let mut spans =
-                vec![Span::styled(" ❯ ", t::bold(t::PINK)), Span::styled(a.description.clone(), t::fg(t::LAVENDER))];
+                vec![Span::styled(" ❯ ", t::bold(t::PRIMARY)), Span::styled(a.description.clone(), t::fg(t::SOFT))];
             if !a.depends.is_empty() {
                 spans.push(Span::styled(format!("  needs {}", a.depends.join(", ")), t::fg(t::MUTED)));
             }
@@ -198,29 +196,6 @@ fn select(f: &mut Frame, w: &mut Wizard, area: Rect) {
         None => Line::from(Span::styled(" ❯ nothing matches", t::fg(t::MUTED))),
     };
     f.render_widget(Paragraph::new(detail), detail_area);
-
-    if let Some(state) = &mut w.profile_popup {
-        let names: Vec<ListItem> = w
-            .cat
-            .profiles
-            .iter()
-            .map(|(n, ids)| {
-                ListItem::new(Line::from(vec![
-                    Span::styled(n.clone(), t::bold(t::TEXT)),
-                    Span::styled(format!("  {} apps", ids.len()), t::fg(t::MUTED)),
-                ]))
-            })
-            .collect();
-        let h = (names.len() as u16 + 2).min(area.height);
-        let [pv] = Layout::vertical([Constraint::Length(h)]).flex(Flex::Center).areas(area);
-        let [p] = Layout::horizontal([Constraint::Length(40)]).flex(Flex::Center).areas(pv);
-        f.render_widget(Clear, p);
-        let list = List::new(names)
-            .block(block("Profiles".into(), true))
-            .highlight_style(t::highlight())
-            .highlight_symbol("▶ ");
-        f.render_stateful_widget(list, p, state);
-    }
 }
 
 /// Plan lines look like `  run       sudo dnf …`: color the verb column separately.
@@ -234,7 +209,7 @@ fn review_line(tone: Tone, text: &str) -> Line<'static> {
     };
     match tone {
         Tone::Header => {
-            Line::from(vec![Span::styled("▌", t::fg(t::PINK)), Span::styled(text.to_string(), t::bold(t::PINK))])
+            Line::from(vec![Span::styled("▌", t::fg(t::PRIMARY)), Span::styled(text.to_string(), t::bold(t::PRIMARY))])
         }
         Tone::Action => split(t::CYAN, t::fg(t::TEXT)),
         Tone::Warn => split(t::ORANGE, t::fg(t::ORANGE)),
@@ -260,7 +235,7 @@ fn unit_marker(s: &UnitState, frame: usize) -> Span<'static> {
     const SPIN: [&str; 4] = ["◐", "◓", "◑", "◒"];
     match s {
         UnitState::Pending => Span::styled("·", t::fg(t::LINE)),
-        UnitState::Running => Span::styled(SPIN[frame % 4], t::bold(t::PINK)),
+        UnitState::Running => Span::styled(SPIN[frame % 4], t::bold(t::PRIMARY)),
         UnitState::Done(Outcome::Changed) => Span::styled("✓", t::bold(t::TEAL)),
         UnitState::Done(Outcome::Unchanged) => Span::styled("=", t::fg(t::MUTED)),
         UnitState::Done(Outcome::Failed(_)) => Span::styled("✗", t::bold(t::RED)),
@@ -295,7 +270,7 @@ fn progress(f: &mut Frame, area: Rect, ratio: f64, done: bool, failed: bool, lab
     } else if done {
         t::TEAL
     } else {
-        t::PINK
+        t::PRIMARY
     };
     spans.push(Span::styled(format!(" {label}"), t::bold(color)));
     f.render_widget(Paragraph::new(Line::from(spans)), area);
@@ -332,7 +307,7 @@ fn run(f: &mut Frame, w: &mut Wizard, area: Rect) {
             let name = match s {
                 UnitState::Running => t::bold(t::TEXT),
                 UnitState::Pending => t::fg(t::MUTED),
-                _ => t::fg(t::LAVENDER),
+                _ => t::fg(t::SOFT),
             };
             Line::from(vec![
                 Span::raw(" "),
@@ -360,20 +335,20 @@ fn run(f: &mut Frame, w: &mut Wizard, area: Rect) {
 fn log_line(l: &str) -> Line<'static> {
     if let Some(name) = l.strip_prefix("── ").and_then(|s| s.strip_suffix(" ──")) {
         return Line::from(vec![
-            Span::styled(" ▶ ", t::pill(t::PINK)),
-            Span::styled(format!(" {name}"), t::bold(t::PINK)),
+            Span::styled(" ▶ ", t::pill(t::PRIMARY)),
+            Span::styled(format!(" {name}"), t::bold(t::PRIMARY)),
         ]);
     }
     if let Some(rest) = l.strip_prefix("$ ") {
         return Line::from(vec![
-            Span::styled("$ ", t::bold(t::PINK)),
-            Span::styled(rest.to_string(), t::fg(t::LAVENDER)),
+            Span::styled("$ ", t::bold(t::PRIMARY)),
+            Span::styled(rest.to_string(), t::fg(t::SOFT)),
         ]);
     }
     if let Some(rest) = l.strip_prefix("[dry-run] ") {
         return Line::from(vec![
             Span::styled("dry-run ", t::bold(t::ORANGE)),
-            Span::styled(rest.to_string(), t::fg(t::LAVENDER)),
+            Span::styled(rest.to_string(), t::fg(t::SOFT)),
         ]);
     }
     let style = if l.starts_with('✗') {

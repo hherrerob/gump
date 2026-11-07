@@ -1,0 +1,11 @@
+name = "uv"
+description = "Python package and project manager"
+
+[install.fedora]
+dnf = ["uv"]
+
+[install.arch]
+pacman = ["uv"]
+
+[install.macos]
+brew = ["uv"]

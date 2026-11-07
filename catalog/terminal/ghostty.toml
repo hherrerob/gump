@@ -11,7 +11,3 @@ pacman = ["ghostty"]
 
 [install.macos]
 cask = ["ghostty"]
-
-[[settings]]
-source = "config"
-target = "~/.config/ghostty/config"

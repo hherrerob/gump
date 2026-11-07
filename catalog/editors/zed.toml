@@ -1,0 +1,17 @@
+name = "Zed"
+description = "Fast collaborative code editor"
+depends = ["jetbrains-mono-nerd"]
+
+[install.fedora]
+flatpak = ["dev.zed.Zed"]
+
+[install.arch]
+pacman = ["zed"]
+
+[install.macos]
+cask = ["zed"]
+
+# Same path on every OS (the Fedora flatpak also reads the host's ~/.config/zed).
+[[settings]]
+source = "settings.json"
+target = "~/.config/zed/settings.json"

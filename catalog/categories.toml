@@ -20,8 +20,20 @@ id = "browsers"
 name = "Browsers"
 
 [[category]]
-id = "communication"
-name = "Communication"
+id = "languages"
+name = "Languages"
+
+[[category]]
+id = "harnesses"
+name = "AI harnesses"
+
+[[category]]
+id = "containers"
+name = "Containers"
+
+[[category]]
+id = "making"
+name = "Making (3D printing, ESP32)"
 
 [[category]]
 id = "fonts"

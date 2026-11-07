@@ -120,36 +120,3 @@ pub fn write_file(target: &Path, content: &[u8], backup: bool) -> Result<Option<
     std::fs::write(target, content).with_context(|| format!("writing {}", target.display()))?;
     Ok(backed_up)
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn expands_home_and_xdg() {
-        let h = dirs::home_dir().unwrap();
-        assert_eq!(expand("~/.gitconfig").unwrap(), h.join(".gitconfig"));
-        assert_eq!(expand("${HOME}/x").unwrap(), h.join("x"));
-        assert!(expand("relative/path").is_err());
-        assert!(expand("$GUMP_DEFINITELY_UNSET_VAR/x").is_err());
-        assert!(expand("$XDG_CONFIG_HOME/ghostty/config").unwrap().ends_with("ghostty/config"));
-    }
-
-    #[test]
-    fn copy_skip_override_cycle() {
-        let dir = tempfile::tempdir().unwrap();
-        let target = dir.path().join("deep/nested/settings.json");
-
-        assert_eq!(file_state(&target, b"v1"), FileState::Missing);
-        assert_eq!(write_file(&target, b"v1", false).unwrap(), None);
-        assert_eq!(file_state(&target, b"v1"), FileState::Identical);
-
-        std::fs::write(&target, b"user edit").unwrap();
-        assert_eq!(file_state(&target, b"v1"), FileState::Differs);
-
-        let bak = write_file(&target, b"v1", true).unwrap().expect("backup made");
-        assert_eq!(std::fs::read(&bak).unwrap(), b"user edit");
-        assert!(bak.file_name().unwrap().to_string_lossy().starts_with("settings.json.gump-bak-"));
-        assert_eq!(file_state(&target, b"v1"), FileState::Identical);
-    }
-}

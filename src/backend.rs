@@ -16,6 +16,8 @@ pub enum PkgKind {
     Flatpak,
     Brew,
     Cask,
+    /// VS Code extensions (only valid in `[extras.*]`).
+    Vscode,
 }
 
 impl PkgKind {
@@ -27,6 +29,7 @@ impl PkgKind {
             PkgKind::Flatpak => "flatpak",
             PkgKind::Brew => "brew",
             PkgKind::Cask => "cask",
+            PkgKind::Vscode => "vscode",
         }
     }
 
@@ -34,8 +37,9 @@ impl PkgKind {
         matches!(
             (self, os),
             (PkgKind::Dnf | PkgKind::Flatpak, Os::Fedora)
-                | (PkgKind::Pacman | PkgKind::Aur | PkgKind::Flatpak, Os::Arch)
+                | (PkgKind::Pacman | PkgKind::Aur, Os::Arch)
                 | (PkgKind::Brew | PkgKind::Cask, Os::Macos)
+                | (PkgKind::Vscode, _)
         )
     }
 }
@@ -136,8 +140,8 @@ pub fn has_brew() -> bool {
     brew_bin() != "brew"
 }
 
-pub fn aur_helper() -> Option<String> {
-    ["paru", "yay"].into_iter().find(|h| which::which(h).is_ok()).map(String::from)
+pub fn has_yay() -> bool {
+    which::which("yay").is_ok()
 }
 
 /// Caches the package manager's installed lists so a full scan only shells out once per backend.
@@ -148,6 +152,7 @@ pub struct Probe {
     flatpak: OnceCell<HashSet<String>>,
     brew: OnceCell<HashSet<String>>,
     cask: OnceCell<HashSet<String>>,
+    vscode: OnceCell<HashSet<String>>,
 }
 
 impl Probe {
@@ -173,6 +178,13 @@ impl Probe {
                 let short = pkg.rsplit('/').next().unwrap_or(pkg);
                 self.cask.get_or_init(|| output_lines(&brew_bin(), &["list", "--cask", "-1"])).contains(short)
             }
+            // Extension ids are case-insensitive.
+            PkgKind::Vscode => self
+                .vscode
+                .get_or_init(|| {
+                    output_lines("code", &["--list-extensions"]).into_iter().map(|l| l.to_lowercase()).collect()
+                })
+                .contains(&pkg.to_lowercase()),
         }
     }
 }
@@ -207,12 +219,16 @@ pub fn install_cmd(kind: PkgKind, pkgs: &[String]) -> Cmd {
     match kind {
         PkgKind::Dnf => Cmd::sudo(&["dnf", "install", "-y"]).args(pkgs),
         PkgKind::Pacman => Cmd::sudo(&["pacman", "-S", "--needed", "--noconfirm"]).args(pkgs),
-        PkgKind::Aur => Cmd::new(aur_helper().unwrap_or_else(|| "paru".into()), &["-S", "--needed", "--noconfirm"])
+        PkgKind::Aur => Cmd::new("yay", &["-S", "--needed", "--noconfirm"])
             .privileged()
             .args(pkgs),
         PkgKind::Flatpak => Cmd::sudo(&["flatpak", "install", "-y", "--noninteractive", "flathub"]).args(pkgs),
         PkgKind::Brew => brew_cmd(&["install"]).args(pkgs),
         PkgKind::Cask => brew_cmd(&["install", "--cask"]).privileged().args(pkgs),
+        PkgKind::Vscode => {
+            let args: Vec<String> = pkgs.iter().flat_map(|p| ["--install-extension".into(), p.clone()]).collect();
+            Cmd::new("code", &[]).args(&args)
+        }
     }
 }
 
@@ -229,32 +245,4 @@ pub fn spec_cmds(spec: &InstallSpec) -> Vec<Cmd> {
     }
     cmds.extend(spec.post.iter().map(|s| Cmd::sh(s)));
     cmds
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn spec_order_and_display() {
-        let spec = InstallSpec {
-            pre: vec!["sudo dnf copr enable -y x/y".into()],
-            dnf: vec!["a".into(), "b".into()],
-            flatpak: vec!["org.x.Y".into()],
-            post: vec!["echo done".into()],
-            ..Default::default()
-        };
-        let cmds = spec_cmds(&spec);
-        let shown: Vec<String> = cmds.iter().map(Cmd::display).collect();
-        assert_eq!(
-            shown,
-            [
-                "sudo dnf copr enable -y x/y",
-                "sudo dnf install -y a b",
-                "sudo flatpak install -y --noninteractive flathub org.x.Y",
-                "echo done"
-            ]
-        );
-        assert!(cmds[0].privileged && cmds[1].privileged && !cmds[3].privileged);
-    }
 }

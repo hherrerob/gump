@@ -1,0 +1,14 @@
+name = "Google Chrome"
+description = "Google's browser"
+
+[install.fedora]
+pre = [
+  '''printf '[google-chrome]\nname=google-chrome\nbaseurl=https://dl.google.com/linux/chrome/rpm/stable/x86_64\nenabled=1\ngpgcheck=1\ngpgkey=https://dl.google.com/linux/linux_signing_key.pub\n' | sudo tee /etc/yum.repos.d/google-chrome.repo >/dev/null''',
+]
+dnf = ["google-chrome-stable"]
+
+[install.arch]
+aur = ["google-chrome"]
+
+[install.macos]
+cask = ["google-chrome"]

@@ -1,0 +1,14 @@
+name = "Docker"
+description = "Docker Engine (OrbStack on macOS)"
+
+[install.fedora]
+pre = ["sudo dnf config-manager addrepo --overwrite --from-repofile=https://download.docker.com/linux/fedora/docker-ce.repo"]
+dnf = ["docker-ce", "docker-ce-cli", "containerd.io", "docker-buildx-plugin", "docker-compose-plugin"]
+post = ["sudo systemctl enable --now docker", 'sudo usermod -aG docker "$USER"']
+
+[install.arch]
+pacman = ["docker", "docker-buildx", "docker-compose"]
+post = ["sudo systemctl enable --now docker", 'sudo usermod -aG docker "$USER"']
+
+[install.macos]
+cask = ["orbstack"]

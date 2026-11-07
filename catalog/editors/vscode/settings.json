@@ -1,11 +1,9 @@
 {
   "editor.fontFamily": "'JetBrainsMono Nerd Font', monospace",
   "editor.fontSize": 14,
-  "editor.formatOnSave": true,
-  "editor.minimap.enabled": false,
-  "editor.rulers": [100],
-  "files.trimTrailingWhitespace": true,
-  "files.insertFinalNewline": true,
+  "editor.fontLigatures": true,
+  "terminal.integrated.fontFamily": "JetBrainsMono Nerd Font",
+  "window.autoDetectColorScheme": true,
   "telemetry.telemetryLevel": "off",
   "workbench.startupEditor": "none"
 }
