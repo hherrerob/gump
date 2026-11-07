@@ -1,0 +1,11 @@
+name = "Discord"
+description = "Chat (Flatpak on Fedora)"
+
+[install.fedora]
+flatpak = ["com.discordapp.Discord"]
+
+[install.arch]
+pacman = ["discord"]
+
+[install.macos]
+cask = ["discord"]

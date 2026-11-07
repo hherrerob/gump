@@ -1,0 +1,15 @@
+name = "Git"
+description = "Version control, with my global gitconfig"
+
+[install.fedora]
+dnf = ["git"]
+
+[install.arch]
+pacman = ["git"]
+
+[install.macos]
+brew = ["git"]
+
+[[settings]]
+source = "gitconfig"
+target = "~/.gitconfig"

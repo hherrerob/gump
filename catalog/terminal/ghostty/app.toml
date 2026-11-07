@@ -1,0 +1,17 @@
+name = "Ghostty"
+description = "GPU-accelerated terminal emulator"
+depends = ["jetbrains-mono-nerd"]
+
+[install.fedora]
+pre = ["sudo dnf copr enable -y scottames/ghostty"]
+dnf = ["ghostty"]
+
+[install.arch]
+pacman = ["ghostty"]
+
+[install.macos]
+cask = ["ghostty"]
+
+[[settings]]
+source = "config"
+target = "~/.config/ghostty/config"

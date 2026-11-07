@@ -1,0 +1,4 @@
+# One-key presets (press `p` in the wizard, or `gump install <profile>`).
+# Apps that don't exist for the current OS are skipped.
+essentials = ["rpmfusion", "git", "cli-tools", "ghostty", "neovim"]
+workstation = ["rpmfusion", "git", "cli-tools", "ghostty", "neovim", "vscode", "firefox", "discord", "jetbrains-mono-nerd"]

@@ -1,0 +1,11 @@
+name = "Firefox"
+description = "Web browser"
+
+[install.fedora]
+dnf = ["firefox"]
+
+[install.arch]
+pacman = ["firefox"]
+
+[install.macos]
+cask = ["firefox"]

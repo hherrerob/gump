@@ -1,0 +1,12 @@
+name = "Brave"
+description = "Chromium-based browser with built-in ad blocking"
+
+[install.fedora]
+pre = ["sudo dnf config-manager addrepo --overwrite --from-repofile=https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo"]
+dnf = ["brave-browser"]
+
+[install.arch]
+aur = ["brave-bin"]
+
+[install.macos]
+cask = ["brave-browser"]

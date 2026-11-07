@@ -1,0 +1,24 @@
+name = "JetBrains Mono Nerd Font"
+description = "Monospace font patched with Nerd Font icons"
+
+# Not packaged in Fedora's repos: download the release into ~/.local/share/fonts.
+[install.fedora]
+script = '''
+set -e
+dir="$HOME/.local/share/fonts/JetBrainsMonoNerd"
+tmp=$(mktemp -d)
+curl -fsSL -o "$tmp/font.tar.xz" https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.tar.xz
+mkdir -p "$dir"
+tar -xJf "$tmp/font.tar.xz" -C "$dir"
+rm -rf "$tmp"
+fc-cache -f "$dir"
+'''
+
+[install.arch]
+pacman = ["ttf-jetbrains-mono-nerd"]
+
+[install.macos]
+cask = ["font-jetbrains-mono-nerd-font"]
+
+[check]
+path = "~/.local/share/fonts/JetBrainsMonoNerd"

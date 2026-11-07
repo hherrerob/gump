@@ -1,0 +1,11 @@
+name = "CLI tools"
+description = "ripgrep, fd, bat, fzf, jq, htop"
+
+[install.fedora]
+dnf = ["ripgrep", "fd-find", "bat", "fzf", "jq", "htop"]
+
+[install.arch]
+pacman = ["ripgrep", "fd", "bat", "fzf", "jq", "htop"]
+
+[install.macos]
+brew = ["ripgrep", "fd", "bat", "fzf", "jq", "htop"]

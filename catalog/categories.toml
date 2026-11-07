@@ -1,0 +1,28 @@
+# Display order of categories in the wizard. An app's category is the directory it lives in.
+[[category]]
+id = "core"
+name = "Core"
+
+[[category]]
+id = "shell"
+name = "Shell"
+
+[[category]]
+id = "terminal"
+name = "Terminal"
+
+[[category]]
+id = "editors"
+name = "Editors"
+
+[[category]]
+id = "browsers"
+name = "Browsers"
+
+[[category]]
+id = "communication"
+name = "Communication"
+
+[[category]]
+id = "fonts"
+name = "Fonts"

@@ -1,0 +1,19 @@
+# ~/.zshrc, copied by gump. Edit freely: gump only replaces it with --override.
+
+HISTFILE=~/.zsh_history
+HISTSIZE=50000
+SAVEHIST=50000
+setopt share_history hist_ignore_all_dups
+bindkey -e
+autoload -Uz compinit && compinit
+
+# Load a plugin from wherever this OS puts it (Fedora, Arch, Homebrew).
+_gump_plugin() {
+  local d
+  for d in /usr/share/$1 /usr/share/zsh/plugins/$1 /opt/homebrew/share/$1 /usr/local/share/$1; do
+    [[ -r $d/$1.zsh ]] && { source $d/$1.zsh; return; }
+  done
+}
+_gump_plugin zsh-autosuggestions
+_gump_plugin zsh-syntax-highlighting   # must stay last
+unfunction _gump_plugin

@@ -1,0 +1,23 @@
+name = "Visual Studio Code"
+description = "Code editor, with my user settings"
+
+[install.fedora]
+pre = [
+  "sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc",
+  '''printf '[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc\n' | sudo tee /etc/yum.repos.d/vscode.repo >/dev/null''',
+]
+dnf = ["code"]
+
+[install.arch]
+aur = ["visual-studio-code-bin"]
+
+[install.macos]
+cask = ["visual-studio-code"]
+
+[check]
+command = "code"
+
+[[settings]]
+source = "settings.json"
+target.linux = "~/.config/Code/User/settings.json"
+target.macos = "~/Library/Application Support/Code/User/settings.json"

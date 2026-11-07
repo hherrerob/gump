@@ -1,0 +1,33 @@
+name = "zsh"
+description = "Z shell, with autosuggestions and syntax highlighting"
+
+# On install, make zsh the login shell (macOS already uses it).
+[install.fedora]
+dnf = ["zsh"]
+post = ['[ "$(basename "$SHELL")" = zsh ] || sudo usermod -s "$(command -v zsh)" "$USER"']
+
+[install.arch]
+pacman = ["zsh"]
+post = ['[ "$(basename "$SHELL")" = zsh ] || sudo usermod -s "$(command -v zsh)" "$USER"']
+
+[install.macos]
+brew = ["zsh"]
+
+# macOS ships zsh, so it counts as installed there.
+[check]
+command = "zsh"
+
+# Plugins are part of zsh's settings: installed even if zsh already is, skipped with --agnostic.
+# Add a package here and the next run installs just that one.
+[extras.fedora]
+dnf = ["zsh-autosuggestions", "zsh-syntax-highlighting"]
+
+[extras.arch]
+pacman = ["zsh-autosuggestions", "zsh-syntax-highlighting"]
+
+[extras.macos]
+brew = ["zsh-autosuggestions", "zsh-syntax-highlighting"]
+
+[[settings]]
+source = "zshrc"
+target = "~/.zshrc"
