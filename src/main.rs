@@ -23,6 +23,9 @@ struct Cli {
     #[arg(long, global = true, value_name = "PATH")]
     catalog: Option<PathBuf>,
 
+    #[command(flatten)]
+    flags: RunFlags,
+
     #[command(subcommand)]
     command: Option<Cmd>,
 }
@@ -30,7 +33,7 @@ struct Cli {
 #[derive(Subcommand)]
 enum Cmd {
     /// Launch the interactive wizard (the default).
-    Drill(RunFlags),
+    Drill,
     /// List the catalog for this OS.
     List {
         /// Only show this category.
@@ -47,27 +50,28 @@ enum Cmd {
         /// Don't ask for confirmation.
         #[arg(short, long)]
         yes: bool,
-        #[command(flatten)]
-        flags: RunFlags,
     },
 }
 
 #[derive(Args, Clone, Copy, Default)]
 struct RunFlags {
     /// Replace existing settings files (the old file is kept as <name>.gump-bak-<time>).
-    #[arg(long = "override")]
+    #[arg(long = "override", global = true)]
     override_settings: bool,
     /// Install apps only; never touch settings files.
-    #[arg(long)]
+    #[arg(long, global = true)]
     agnostic: bool,
     /// Show what would happen without changing anything.
-    #[arg(long)]
+    #[arg(long, global = true)]
     dry_run: bool,
+    /// Show the plan for approval and the commands' output.
+    #[arg(short, long, global = true)]
+    verbose: bool,
 }
 
 impl From<RunFlags> for Options {
     fn from(f: RunFlags) -> Options {
-        Options { override_settings: f.override_settings, agnostic: f.agnostic, dry_run: f.dry_run }
+        Options { override_settings: f.override_settings, agnostic: f.agnostic, dry_run: f.dry_run, verbose: f.verbose || f.dry_run }
     }
 }
 
@@ -88,14 +92,15 @@ fn real_main() -> Result<()> {
     let os = platform::detect()?;
     let cat = Catalog::load(cli.catalog.as_deref())?;
 
-    match cli.command.unwrap_or(Cmd::Drill(RunFlags::default())) {
-        Cmd::Drill(flags) => {
+    let flags = cli.flags;
+    match cli.command.unwrap_or(Cmd::Drill) {
+        Cmd::Drill => {
             privilege::ensure_not_root()?;
             tui::run(&cat, os, flags.into())
         }
         Cmd::List { category } => list(&cat, os, category.as_deref()),
         Cmd::Status => status(&cat, os),
-        Cmd::Install { targets, yes, flags } => {
+        Cmd::Install { targets, yes } => {
             privilege::ensure_not_root()?;
             install(&cat, os, &targets, yes, flags.into())
         }
@@ -146,19 +151,21 @@ fn status(cat: &Catalog, os: platform::Os) -> Result<()> {
 
 fn install(cat: &Catalog, os: platform::Os, targets: &[String], yes: bool, opts: Options) -> Result<()> {
     let plan = plan::build(cat, targets, os, opts)?;
-    for l in plan::describe(&plan) {
-        let mark = match l.tone {
-            Tone::Header => "▸ ",
-            _ => "  ",
-        };
-        println!("{mark}{}", l.text);
+    if opts.verbose {
+        for l in plan::describe(&plan) {
+            let mark = match l.tone {
+                Tone::Header => "▸ ",
+                _ => "  ",
+            };
+            println!("{mark}{}", l.text);
+        }
+        println!();
     }
-    println!();
     if plan.is_noop() {
         println!("Nothing to do — everything is already in place.");
         return Ok(());
     }
-    if !yes && !opts.dry_run {
+    if opts.verbose && !yes && !opts.dry_run {
         print!("Proceed? [y/N] ");
         std::io::stdout().flush()?;
         let mut answer = String::new();
@@ -175,9 +182,10 @@ fn install(cat: &Catalog, os: platform::Os, targets: &[String], yes: bool, opts:
     let mut any_failed = false;
     for ev in executor::spawn(plan) {
         match ev {
-            Event::Log(l) => println!("{l}"),
+            Event::Log(l) if opts.verbose => println!("{l}"),
+            Event::Log(_) => {}
             Event::Done(s) => {
-                println!("\nDone: {} changed, {} unchanged, {} failed.", s.changed, s.unchanged, s.failed.len());
+                println!("Done: {} changed, {} unchanged, {} failed.", s.changed, s.unchanged, s.failed.len());
                 for (label, msg) in &s.failed {
                     println!("  ✗ {label}: {msg}");
                 }

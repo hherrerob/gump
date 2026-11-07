@@ -22,6 +22,7 @@ pub fn draw(f: &mut Frame, w: &mut Wizard) {
         Screen::Run => run(f, w, body),
     }
     let done = w.run.as_ref().is_some_and(|r| r.done);
+    let enter = if w.opts.verbose { "review" } else { "install" };
     let keys: &[(&str, &str)] = match w.screen {
         Screen::Select if w.filtering => &[("type", "filter"), ("enter", "done"), ("esc", "clear")],
         Screen::Select => &[
@@ -30,7 +31,7 @@ pub fn draw(f: &mut Frame, w: &mut Wizard) {
             ("space", "toggle"),
             ("/", "search"),
             ("c", "clear"),
-            ("enter", "review"),
+            ("enter", enter),
             ("q", "quit"),
         ],
         Screen::Review => &[
@@ -83,7 +84,7 @@ fn flag_spans(w: &Wizard) -> Vec<Span<'static>> {
             vec![Span::raw(" "), Span::styled(format!(" {name} "), t::fg(t::LINE))]
         }
     };
-    [flag(w.opts.override_settings, "override"), flag(w.opts.agnostic, "agnostic"), flag(w.opts.dry_run, "dry-run")]
+    [flag(w.opts.override_settings, "override"), flag(w.opts.agnostic, "agnostic"), flag(w.opts.dry_run, "dry-run"), flag(w.opts.verbose, "verbose")]
         .concat()
 }
 
@@ -132,6 +133,8 @@ fn select(f: &mut Frame, w: &mut Wizard, area: Rect) {
     f.render_stateful_widget(cat_list, left, &mut w.cat_state);
 
     let visible = w.visible_apps();
+    // Pad names to the longest visible one, plus a clear gap before the badges.
+    let name_w = visible.iter().map(|&i| w.cat.apps[i].name.chars().count()).max().unwrap_or(0) + 4;
     let items: Vec<ListItem> = visible
         .iter()
         .map(|&i| {
@@ -144,7 +147,7 @@ fn select(f: &mut Frame, w: &mut Wizard, area: Rect) {
             } else {
                 (Span::styled("○  ", t::fg(t::MUTED)), t::fg(t::TEXT))
             };
-            let mut spans = vec![mark, Span::styled(format!("{:<22}", a.name), name_style)];
+            let mut spans = vec![mark, Span::styled(format!("{:<name_w$}", a.name), name_style)];
             if !s.available {
                 spans.push(Span::styled("not on this OS", t::fg(t::LINE).italic()));
             } else {

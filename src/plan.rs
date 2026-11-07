@@ -16,6 +16,8 @@ pub struct Options {
     pub agnostic: bool,
     /// Print what would happen without doing it.
     pub dry_run: bool,
+    /// Show the plan for approval and the commands' output.
+    pub verbose: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -242,13 +244,14 @@ fn prereqs(kinds: &BTreeSet<PkgKind>) -> Vec<Unit> {
             cmds.push(backend::install_cmd(PkgKind::Dnf, &["flatpak".into()]));
         }
         let has_flathub = std::process::Command::new("flatpak")
-            .args(["remotes", "--columns=name"])
+            // Installs are per-user (`flatpak --user`), so only a user-level flathub counts.
+            .args(["remotes", "--user", "--columns=name"])
             .output()
             .is_ok_and(|o| String::from_utf8_lossy(&o.stdout).lines().any(|l| l.trim() == "flathub"));
         if !has_flathub {
-            cmds.push(Cmd::sudo(&[
-                "flatpak",
+            cmds.push(Cmd::new("flatpak", &[
                 "remote-add",
+                "--user",
                 "--if-not-exists",
                 "flathub",
                 "https://dl.flathub.org/repo/flathub.flatpakrepo",

@@ -222,12 +222,14 @@ pub fn install_cmd(kind: PkgKind, pkgs: &[String]) -> Cmd {
         PkgKind::Aur => Cmd::new("yay", &["-S", "--needed", "--noconfirm"])
             .privileged()
             .args(pkgs),
-        PkgKind::Flatpak => Cmd::sudo(&["flatpak", "install", "-y", "--noninteractive", "flathub"]).args(pkgs),
+        PkgKind::Flatpak => Cmd::new("flatpak", &["install", "--user", "-y", "--noninteractive", "flathub"]).args(pkgs),
         PkgKind::Brew => brew_cmd(&["install"]).args(pkgs),
         PkgKind::Cask => brew_cmd(&["install", "--cask"]).privileged().args(pkgs),
+        // Right after VS Code is installed, the first extension install can fail with
+        // "Signature verification failed with 'UnknownError'"; a second attempt works.
         PkgKind::Vscode => {
-            let args: Vec<String> = pkgs.iter().flat_map(|p| ["--install-extension".into(), p.clone()]).collect();
-            Cmd::new("code", &[]).args(&args)
+            let args: String = pkgs.iter().map(|p| format!(" --install-extension {p}")).collect();
+            Cmd::sh(&format!("code{args} || code{args}"))
         }
     }
 }

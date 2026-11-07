@@ -17,7 +17,7 @@ gump status           # what's installed
 gump install zed git  # no wizard
 ```
 
-Flags: `--dry-run`, `--override` (replace differing configs, keeps a backup), `--agnostic`
+Flags: `--verbose` (show the plan to approve and command output), `--dry-run` (implies --verbose), `--override` (replace differing configs, keeps a backup), `--agnostic`
 (apps only, no configs), `--catalog PATH` (read catalog from disk).
 
 ## Catalog

@@ -294,7 +294,19 @@ impl<'a> Wizard<'a> {
                     self.flash = Some("Select at least one app (Space)".into());
                 } else {
                     self.build_review();
-                    self.screen = Screen::Review;
+                    if self.opts.verbose {
+                        self.screen = Screen::Review;
+                    } else {
+                        // No review screen: go straight to the run (or say why not).
+                        match &self.review {
+                            Some(Ok(p)) if p.is_noop() => {
+                                self.flash = Some("Nothing to do — everything is already in place.".into())
+                            }
+                            Some(Ok(_)) => self.start_run = true,
+                            Some(Err(e)) => self.flash = Some(e.clone()),
+                            None => {}
+                        }
+                    }
                 }
             }
             _ => {}
@@ -306,7 +318,8 @@ impl<'a> Wizard<'a> {
         while let Ok(ev) = run.rx.try_recv() {
             match ev {
                 Event::Started(i) => run.units[i] = UnitState::Running,
-                Event::Log(l) => run.pending.push(l),
+                Event::Log(l) if run.plan.opts.verbose => run.pending.push(l),
+                Event::Log(_) => {}
                 Event::Finished(i, o) => run.units[i] = UnitState::Done(o),
                 Event::Done(summary) => {
                     run.done = true;
