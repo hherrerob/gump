@@ -22,13 +22,3 @@ command = "code"
 source = "settings.json"
 target.linux = "~/.config/Code/User/settings.json"
 target.macos = "~/Library/Application Support/Code/User/settings.json"
-
-# Extensions count as settings: installed even when VS Code already is, skipped with --agnostic.
-[extras.fedora]
-vscode = ["platformio.platformio-ide", "wokwi.wokwi-vscode"]
-
-[extras.arch]
-vscode = ["platformio.platformio-ide", "wokwi.wokwi-vscode"]
-
-[extras.macos]
-vscode = ["platformio.platformio-ide", "wokwi.wokwi-vscode"]

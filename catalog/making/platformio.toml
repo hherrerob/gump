@@ -1,5 +1,7 @@
 name = "PlatformIO"
-description = "Embedded toolchain for ESP32 and friends (pio CLI)"
+description = "Embedded toolchain for ESP32 and friends (pio CLI + VS Code extensions)"
+# The PlatformIO and Wokwi extensions need VS Code, so it comes along.
+depends = ["vscode"]
 
 # Fedora: installed as a uv tool, plus udev rules and the dialout group for serial access.
 [install.fedora]
@@ -24,3 +26,13 @@ brew = ["platformio"]
 [check]
 command = "pio"
 path = "~/.local/bin/pio"
+
+# Extensions count as settings: installed even when PlatformIO already is, skipped with --agnostic.
+[extras.fedora]
+vscode = ["platformio.platformio-ide", "wokwi.wokwi-vscode"]
+
+[extras.arch]
+vscode = ["platformio.platformio-ide", "wokwi.wokwi-vscode"]
+
+[extras.macos]
+vscode = ["platformio.platformio-ide", "wokwi.wokwi-vscode"]
