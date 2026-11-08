@@ -166,6 +166,11 @@ pub fn resolve<'a>(cat: &'a Catalog, targets: &[String], os: Os) -> Result<Resol
         if !app.available(os) {
             bail!("'{}' is not available on {}", app.id, os.display());
         }
+        if let Some(other) = requested.iter().find(|o| o.category == app.category && o.id != app.id) {
+            if cat.categories.iter().any(|c| c.id == app.category && c.single) {
+                bail!("'{}' and '{}' are alternatives; pick one", other.id, app.id);
+            }
+        }
         requested.push(app);
     }
 

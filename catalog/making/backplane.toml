@@ -1,0 +1,14 @@
+name = "Backplane"
+description = "Agentic CAD, a KiCad fork (alpha)"
+
+# The official installer is per-user (~/.local/share/backplane, ~/.local/bin) and adds a
+# menu entry on Linux. Not on Arch: no pacman/AUR package. No Intel Mac build.
+[install.fedora]
+script = "curl -fsSL https://backplaneworks.com/install.sh | sh -s -- --quiet"
+
+[install.macos]
+script = "curl -fsSL https://backplaneworks.com/install.sh | sh -s -- --quiet"
+
+[check]
+command = "backplane"
+path = "~/.local/bin/backplane"

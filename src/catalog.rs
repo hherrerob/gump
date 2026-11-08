@@ -46,6 +46,9 @@ impl fmt::Display for Source {
 pub struct Category {
     pub id: String,
     pub name: String,
+    /// At most one app of this category can be picked (e.g. the login shell).
+    #[serde(default)]
+    pub single: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -148,6 +151,9 @@ pub struct Check {
     pub path: Option<String>,
     /// A shell snippet that exits 0.
     pub shell: Option<String>,
+    /// Required, not alternative: the app only counts as installed while this is the user's
+    /// login shell (e.g. "zsh").
+    pub login_shell: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -366,8 +372,8 @@ fn validate(categories: &[Category], apps: &[App]) -> Vec<String> {
             if os == Os::Arch && spec.script.is_some() {
                 errors.push(format!("{at}: [install.arch] can't use a script; only pacman and aur (yay)"));
             }
-            if groups.is_empty() && spec.script.is_none() {
-                errors.push(format!("{at}: [install.{}] has no packages and no script", os.key()));
+            if groups.is_empty() && spec.script.is_none() && spec.post.is_empty() {
+                errors.push(format!("{at}: [install.{}] has no packages, script or post", os.key()));
             }
             for (kind, _) in &groups {
                 if *kind == PkgKind::Vscode {
@@ -403,7 +409,7 @@ fn validate(categories: &[Category], apps: &[App]) -> Vec<String> {
             }
         }
         if let Some(c) = &a.check {
-            if c.command.is_none() && c.path.is_none() && c.shell.is_none() {
+            if c.command.is_none() && c.path.is_none() && c.shell.is_none() && c.login_shell.is_none() {
                 errors.push(format!("{at}: [check] is empty"));
             }
         }

@@ -47,7 +47,125 @@ fn to_256((r, g, b): Rgb) -> u8 {
     16 + 36 * idx(r) as u8 + 6 * idx(g) as u8 + idx(b) as u8
 }
 
+/// Whether the terminal has a light background. `GUMP_THEME=light|dark` overrides detection.
+fn light() -> bool {
+    static LIGHT: OnceLock<bool> = OnceLock::new();
+    *LIGHT.get_or_init(|| match std::env::var("GUMP_THEME").as_deref() {
+        Ok("light") => true,
+        Ok("dark") => false,
+        _ => query_bg().map(|(r, g, b)| 0.2126 * r as f32 + 0.7152 * g as f32 + 0.0722 * b as f32 > 128.0).unwrap_or_else(
+            // COLORFGBG is "fg;bg" with ANSI color numbers; 7 and 9–15 are light backgrounds.
+            || {
+                std::env::var("COLORFGBG")
+                    .ok()
+                    .and_then(|v| v.rsplit(';').next()?.parse::<u8>().ok())
+                    .is_some_and(|bg| bg == 7 || bg >= 9)
+            },
+        ),
+    })
+}
+
+/// Detect the background before the wizard takes over the terminal.
+pub fn init() {
+    light();
+}
+
+/// Ask the terminal for its background color (OSC 11). None if it doesn't answer quickly.
+#[cfg(unix)]
+fn query_bg() -> Option<Rgb> {
+    use std::io::{Read, Write};
+    use std::os::fd::AsRawFd;
+    use std::time::{Duration, Instant};
+    let mut tty = std::fs::OpenOptions::new().read(true).write(true).open("/dev/tty").ok()?;
+    let fd = tty.as_raw_fd();
+    // SAFETY: plain termios/select calls on a file descriptor we own; the old mode is restored.
+    unsafe {
+        let mut old: libc::termios = std::mem::zeroed();
+        if libc::tcgetattr(fd, &mut old) != 0 {
+            return None;
+        }
+        let mut raw = old;
+        libc::cfmakeraw(&mut raw);
+        libc::tcsetattr(fd, libc::TCSANOW, &raw);
+        let mut buf = Vec::new();
+        if tty.write_all(b"\x1b]11;?\x1b\\").and_then(|_| tty.flush()).is_ok() {
+            let deadline = Instant::now() + Duration::from_millis(200);
+            while !buf.ends_with(b"\x07") && !buf.ends_with(b"\x1b\\") {
+                let left = deadline.saturating_duration_since(Instant::now());
+                if left.is_zero() {
+                    break;
+                }
+                // select, not poll: poll doesn't work on ttys on macOS.
+                let mut set: libc::fd_set = std::mem::zeroed();
+                libc::FD_SET(fd, &mut set);
+                let mut tv = libc::timeval { tv_sec: 0, tv_usec: left.as_micros() as _ };
+                if libc::select(fd + 1, &mut set, std::ptr::null_mut(), std::ptr::null_mut(), &mut tv) <= 0 {
+                    break;
+                }
+                let mut b = [0u8; 64];
+                match tty.read(&mut b) {
+                    Ok(n) if n > 0 => buf.extend_from_slice(&b[..n]),
+                    _ => break,
+                }
+            }
+        }
+        libc::tcsetattr(fd, libc::TCSANOW, &old);
+        parse_osc11(&String::from_utf8_lossy(&buf))
+    }
+}
+
+#[cfg(not(unix))]
+fn query_bg() -> Option<Rgb> {
+    None
+}
+
+/// Parse `…rgb:RRRR/GGGG/BBBB…` (1–4 hex digits per channel).
+fn parse_osc11(s: &str) -> Option<Rgb> {
+    let rest = &s[s.find("rgb:")? + 4..];
+    let mut ch = rest.split('/').map(|p| {
+        let hex: String = p.chars().take_while(|c| c.is_ascii_hexdigit()).collect();
+        let max = (1u32 << (4 * hex.len() as u32)) - 1;
+        u32::from_str_radix(&hex, 16).ok().filter(|_| !hex.is_empty()).map(|v| (v * 255 / max) as u8)
+    });
+    Some((ch.next()??, ch.next()??, ch.next()??))
+}
+
+/// Light terminals: flip each color's lightness and keep its hue, so bright-on-dark becomes
+/// dark-on-light everywhere, gradients included.
+fn for_light((r, g, b): Rgb) -> Rgb {
+    let (r, g, b) = (r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0);
+    let (max, min) = (r.max(g).max(b), r.min(g).min(b));
+    let l = (max + min) / 2.0;
+    let d = max - min;
+    let s = if d == 0.0 { 0.0 } else { d / (1.0 - (2.0 * l - 1.0).abs()) };
+    let h = if d == 0.0 {
+        0.0
+    } else if max == r {
+        ((g - b) / d).rem_euclid(6.0)
+    } else if max == g {
+        (b - r) / d + 2.0
+    } else {
+        (r - g) / d + 4.0
+    };
+    // Accents land a bit darker than a plain flip so they read on white.
+    let l = if s > 0.3 && l > 0.45 { (1.0 - l) * 0.65 } else { 1.0 - l };
+    let c = (1.0 - (2.0 * l - 1.0).abs()) * s;
+    let x = c * (1.0 - (h.rem_euclid(2.0) - 1.0).abs());
+    let (r, g, b) = match h as u32 {
+        0 => (c, x, 0.0),
+        1 => (x, c, 0.0),
+        2 => (0.0, c, x),
+        3 => (0.0, x, c),
+        4 => (x, 0.0, c),
+        _ => (c, 0.0, x),
+    };
+    let m = l - c / 2.0;
+    let to = |v: f32| ((v + m).clamp(0.0, 1.0) * 255.0).round() as u8;
+    (to(r), to(g), to(b))
+}
+
 pub fn c(rgb: Rgb) -> Color {
+    let rgb = if light() { for_light(rgb) } else { rgb };
     if truecolor() {
         Color::Rgb(rgb.0, rgb.1, rgb.2)
     } else {

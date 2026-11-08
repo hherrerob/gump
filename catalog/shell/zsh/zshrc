@@ -1,0 +1,42 @@
+# ~/.zshrc (from gump)
+
+# User binaries (claude, uv tools, pio...) first, like Fedora's default .bashrc.
+typeset -U path
+path=("$HOME/.local/bin" "$HOME/bin" $path)
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+export PATH
+
+# History
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=10000
+SAVEHIST=10000
+setopt share_history hist_ignore_dups hist_ignore_space
+
+# Completion and keys
+autoload -Uz compinit && compinit
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
+bindkey -e
+
+# Prompt: user@host dir (git branch) $
+autoload -Uz vcs_info
+zstyle ':vcs_info:*' enable git
+zstyle ':vcs_info:git:*' formats ' %F{208}(%b)%f'
+zstyle ':vcs_info:git:*' actionformats ' %F{208}(%b|%a)%f'
+precmd() { vcs_info }
+setopt prompt_subst
+PROMPT='%B%F{cyan}%n@%m%f %F{blue}%~%f${vcs_info_msg_0_} $%b '
+
+# Plugins (installed with zsh by gump). Syntax highlighting must load last.
+for dir in /usr/share/zsh-autosuggestions /usr/share/zsh/plugins/zsh-autosuggestions \
+           /opt/homebrew/share/zsh-autosuggestions /usr/local/share/zsh-autosuggestions; do
+  [ -f "$dir/zsh-autosuggestions.zsh" ] && . "$dir/zsh-autosuggestions.zsh" && break
+done
+
+# Machine-specific additions
+[ -d "$HOME/.zshrc.d" ] && for rc in "$HOME"/.zshrc.d/*(N); do . "$rc"; done
+
+for dir in /usr/share/zsh-syntax-highlighting /usr/share/zsh/plugins/zsh-syntax-highlighting \
+           /opt/homebrew/share/zsh-syntax-highlighting /usr/local/share/zsh-syntax-highlighting; do
+  [ -f "$dir/zsh-syntax-highlighting.zsh" ] && . "$dir/zsh-syntax-highlighting.zsh" && break
+done

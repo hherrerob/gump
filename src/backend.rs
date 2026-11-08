@@ -195,15 +195,42 @@ pub fn check_passes(c: &Check) -> bool {
         || c.shell.as_deref().is_some_and(|s| quiet("sh", &["-c", s]))
 }
 
+/// The user's login shell as a bare name ("bash", "zsh"), from the user database.
+pub fn login_shell() -> Option<String> {
+    let user = std::env::var("USER").ok()?;
+    let run = |prog: &str, args: &[&str]| {
+        Command::new(prog)
+            .args(args)
+            .stderr(Stdio::null())
+            .output()
+            .ok()
+            .filter(|o| o.status.success())
+            .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+    };
+    // Linux: `user:x:1000:1000:Name:/home/user:/usr/bin/zsh`; macOS: `UserShell: /bin/zsh`.
+    let path = run("getent", &["passwd", &user])
+        .and_then(|l| l.rsplit(':').next().map(String::from))
+        .or_else(|| run("dscl", &[".", "-read", &format!("/Users/{user}"), "UserShell"])?.split_whitespace().last().map(String::from))?;
+    Path::new(&path).file_name().map(|n| n.to_string_lossy().into_owned())
+}
+
 /// An app counts as installed when its `[check]` passes, or every package it declares for
-/// this OS is installed.
+/// this OS is installed. A `login_shell` check must hold in either case.
 pub fn app_installed(probe: &Probe, app: &App, os: Os) -> bool {
-    if app.check.as_ref().is_some_and(check_passes) {
+    let check = app.check.as_ref();
+    let shell = check.and_then(|c| c.login_shell.as_deref());
+    if shell.is_some_and(|want| login_shell().as_deref() != Some(want)) {
+        return false;
+    }
+    if check.is_some_and(check_passes) {
         return true;
     }
     let Some(spec) = app.spec(os) else { return false };
     let groups = spec.package_groups();
-    !groups.is_empty() && groups.iter().all(|(k, pkgs)| pkgs.iter().all(|p| probe.installed(*k, p)))
+    if groups.is_empty() {
+        return shell.is_some();
+    }
+    groups.iter().all(|(k, pkgs)| pkgs.iter().all(|p| probe.installed(*k, p)))
 }
 
 /// Extra packages that are not installed yet, grouped by kind (empty when all are present).

@@ -1,18 +1,23 @@
 name = "zsh"
-description = "Z shell, set as your login shell"
+description = "Z shell with autosuggestions and syntax highlighting; becomes your login shell"
 
-# On install, make zsh the login shell (macOS already uses it).
 [install.fedora]
-dnf = ["zsh"]
-post = ['[ "$(basename "$SHELL")" = zsh ] || sudo usermod -s "$(command -v zsh)" "$USER"']
+dnf = ["zsh", "zsh-autosuggestions", "zsh-syntax-highlighting"]
+post = ['sudo usermod -s "$(command -v zsh)" "$USER"']
 
 [install.arch]
-pacman = ["zsh"]
-post = ['[ "$(basename "$SHELL")" = zsh ] || sudo usermod -s "$(command -v zsh)" "$USER"']
+pacman = ["zsh", "zsh-autosuggestions", "zsh-syntax-highlighting"]
+post = ['sudo usermod -s "$(command -v zsh)" "$USER"']
 
+# macOS ships zsh in /bin (the only zsh chsh accepts without editing /etc/shells).
 [install.macos]
-brew = ["zsh"]
+brew = ["zsh-autosuggestions", "zsh-syntax-highlighting"]
+post = ['sudo chsh -s /bin/zsh "$USER"']
 
-# macOS ships zsh, so it counts as installed there.
+# Counts as installed only while zsh is your login shell.
 [check]
-command = "zsh"
+login_shell = "zsh"
+
+[[settings]]
+source = "zshrc"
+target = "~/.zshrc"

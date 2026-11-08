@@ -6,6 +6,8 @@ name = "Core"
 [[category]]
 id = "shell"
 name = "Shell"
+# Pick one: the selected shell becomes your login shell.
+single = true
 
 [[category]]
 id = "terminal"
@@ -33,7 +35,7 @@ name = "Containers"
 
 [[category]]
 id = "making"
-name = "Making (3D printing, ESP32)"
+name = "Making"
 
 [[category]]
 id = "fonts"

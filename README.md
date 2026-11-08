@@ -18,7 +18,8 @@ gump install zed git  # no wizard
 ```
 
 Flags: `--verbose` (show the plan to approve and command output), `--dry-run` (implies --verbose), `--override` (replace differing configs, keeps a backup), `--agnostic`
-(apps only, no configs), `--catalog PATH` (read catalog from disk).
+(apps only, no configs), `--catalog PATH` (read catalog from disk). Colors follow the terminal's
+light or dark background; force one with `GUMP_THEME=light` or `GUMP_THEME=dark`.
 
 ## Catalog
 
@@ -44,8 +45,9 @@ source = "settings.json"
 target = "~/.config/zed/settings.json"
 ```
 
-Optional: `pre`/`post` commands, `[check]` (`command`, `path` or `shell`) and
-`[extras.<os>]` for add-ons like VS Code extensions (`vscode = [...]`).
+Optional: `pre`/`post` commands, `[check]` (`command`, `path`, `shell`, or `login_shell` which must hold) and
+`[extras.<os>]` for add-ons like VS Code extensions (`vscode = [...]`). A category with
+`single = true` in `categories.toml` is pick-one (the Shell category).
 
 Pushing to `main` builds the binaries and updates the `latest` release that `bootstrap.sh`
 downloads.

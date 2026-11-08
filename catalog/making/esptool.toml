@@ -1,0 +1,14 @@
+name = "esptool"
+description = "Flash and erase ESP32/ESP8266 chips from the terminal"
+
+[install.fedora]
+dnf = ["esptool"]
+
+[install.arch]
+pacman = ["esptool"]
+
+[install.macos]
+brew = ["esptool"]
+
+[check]
+command = "esptool"

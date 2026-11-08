@@ -1,0 +1,26 @@
+name = "bash"
+description = "Back to bash as your login shell, with the same prompt as zsh"
+
+# Fedora's ~/.bashrc already loads ~/.bashrc.d/*; Arch's and macOS's don't, so add the loader.
+[install.fedora]
+post = ['sudo usermod -s "$(command -v bash)" "$USER"']
+
+[install.arch]
+post = [
+  'grep -qs bashrc.d ~/.bashrc || printf "\nfor rc in ~/.bashrc.d/*; do [ -f \"\$rc\" ] && . \"\$rc\"; done\n" >> ~/.bashrc',
+  'sudo usermod -s "$(command -v bash)" "$USER"',
+]
+
+[install.macos]
+post = [
+  'grep -qs bashrc.d ~/.bash_profile || printf "\nfor rc in ~/.bashrc.d/*; do [ -f \"\$rc\" ] && . \"\$rc\"; done\n" >> ~/.bash_profile',
+  'sudo chsh -s /bin/bash "$USER"',
+]
+
+# Counts as installed only while bash is your login shell.
+[check]
+login_shell = "bash"
+
+[[settings]]
+source = "prompt.sh"
+target = "~/.bashrc.d/prompt.sh"

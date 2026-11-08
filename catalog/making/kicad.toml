@@ -1,0 +1,11 @@
+name = "KiCad"
+description = "Schematic and PCB design"
+
+[install.fedora]
+dnf = ["kicad"]
+
+[install.arch]
+pacman = ["kicad", "kicad-library"]
+
+[install.macos]
+cask = ["kicad"]

@@ -150,6 +150,11 @@ impl<'a> Wizard<'a> {
         if !self.status[i].available {
             self.flash = Some(format!("{} is not available on {}", self.cat.apps[i].name, self.os.display()));
         } else if !self.selected.remove(&i) {
+            // In a pick-one category, choosing an app drops the other choice.
+            let cid = &self.cat.apps[i].category;
+            if self.cat.categories.iter().any(|c| &c.id == cid && c.single) {
+                self.selected.retain(|&j| &self.cat.apps[j].category != cid);
+            }
             self.selected.insert(i);
         }
     }
@@ -378,6 +383,7 @@ fn close_terminal(terminal: &mut DefaultTerminal) {
 }
 
 pub fn run(cat: &Catalog, os: Os, opts: Options) -> Result<()> {
+    theme::init();
     let status = plan::scan(cat, os);
     let available = status.iter().filter(|s| s.available).count();
     let installed = status.iter().filter(|s| s.available && s.installed).count();
