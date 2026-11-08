@@ -24,3 +24,7 @@ login_shell = "bash"
 [[settings]]
 source = "prompt.sh"
 target = "~/.bashrc.d/prompt.sh"
+
+[[settings]]
+source = "path.sh"
+target = "~/.bashrc.d/path.sh"

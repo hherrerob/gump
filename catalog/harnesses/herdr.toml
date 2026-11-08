@@ -1,0 +1,16 @@
+name = "herdr"
+description = "Terminal multiplexer for coding agents"
+
+# Fedora: the official installer (~/.local/bin/herdr, updates with `herdr update`).
+[install.fedora]
+script = "curl -fsSL https://herdr.dev/install.sh | sh"
+
+[install.arch]
+aur = ["herdr-bin"]
+
+[install.macos]
+brew = ["herdr"]
+
+[check]
+command = "herdr"
+path = "~/.local/bin/herdr"

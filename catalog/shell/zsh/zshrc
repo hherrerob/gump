@@ -1,5 +1,11 @@
 # ~/.zshrc (from gump)
 
+# macOS: Homebrew isn't on PATH by default; also its keg-only rustup (cargo, rustc).
+for brew in /opt/homebrew/bin/brew /usr/local/bin/brew; do
+  [ -x "$brew" ] && eval "$("$brew" shellenv)" && break
+done
+[ -n "$HOMEBREW_PREFIX" ] && [ -d "$HOMEBREW_PREFIX/opt/rustup/bin" ] && path=("$HOMEBREW_PREFIX/opt/rustup/bin" $path)
+
 # User binaries (claude, uv tools, pio...) first, like Fedora's default .bashrc.
 typeset -U path
 path=("$HOME/.local/bin" "$HOME/bin" $path)

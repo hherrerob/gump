@@ -1,5 +1,7 @@
 # gump
 
+> Cringe warning: This war vibed-sloped together in a couple of afternoons, it is incredibly useful for me, but might not be as useful to any other sane person.
+
 My setup wizard for fresh Fedora, Arch and macOS installs. Pick apps in a TUI, gump installs
 them with the native package manager and copies my configs. Safe to re-run: installed apps
 are skipped, existing configs are kept.
@@ -11,15 +13,19 @@ curl -fsSL https://raw.githubusercontent.com/CHANGEME/gump/main/bootstrap.sh | s
 ## Usage
 
 ```
-gump                  # wizard (Space toggle, / search, Enter review, q quit)
+gump                  # wizard (Space toggle, / search, Enter install, q quit)
 gump list             # catalog for this OS
 gump status           # what's installed
 gump install zed git  # no wizard
 ```
 
-Flags: `--verbose` (show the plan to approve and command output), `--dry-run` (implies --verbose), `--override` (replace differing configs, keeps a backup), `--agnostic`
-(apps only, no configs), `--catalog PATH` (read catalog from disk). Colors follow the terminal's
-light or dark background; force one with `GUMP_THEME=light` or `GUMP_THEME=dark`.
+| Flag | What it does |
+|---|---|
+| `-v`, `--verbose` | Show the plan to approve and the command output |
+| `--dry-run` | Show what would happen without changing anything (implies `--verbose`) |
+| `--override` | Replace configs that differ (the old file is backed up) |
+| `--agnostic` | Install apps only, never touch configs |
+| `--catalog PATH` | Read the catalog from disk instead of the built-in one |
 
 ## Catalog
 
