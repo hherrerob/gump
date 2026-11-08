@@ -1,0 +1,5 @@
+# ~/.config/ghostty/config.ghostty (from gump)
+# Options: `ghostty +show-config --default --docs` or https://ghostty.org/docs/config
+
+font-family = JetBrainsMono Nerd Font
+font-size = 12

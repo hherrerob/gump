@@ -1,17 +1,116 @@
+// Zed settings
+//
+// For information on how to configure Zed, see the Zed
+// documentation: https://zed.dev/docs/configuring-zed
+//
+// To see all of Zed's default settings without changing your
+// custom settings, run `zed: open default settings` from the
+// command palette (cmd-shift-p / ctrl-shift-p)
 {
-  "buffer_font_family": "JetBrainsMono Nerd Font",
-  "buffer_font_size": 14,
-  "ui_font_size": 15,
-  "terminal": {
-    "font_family": "JetBrainsMono Nerd Font"
+  "languages": {
+    "HTML": {
+      "tab_size": 2,
+    },
+    "JavaScript": {
+      "tab_size": 2,
+    },
+    "JSON": {
+      "tab_size": 2,
+    },
+    "TypeScript": {
+      "tab_size": 2,
+    },
+    "Vue.js": {
+      "tab_size": 2,
+    },
   },
-  "theme": {
-    "mode": "system",
-    "light": "One Light",
-    "dark": "One Dark"
+  "language_models": {
+    "opencode": {
+      "show_free_models": true,
+      "show_zen_models": true,
+    },
+  },
+  "collaboration_panel": {
+    "dock": "left",
+  },
+  "outline_panel": {
+    "dock": "left",
+  },
+  "git_panel": {
+    "tree_view": true,
+    "dock": "left",
+  },
+  "debugger": {
+    "dock": "bottom",
+  },
+  "agent": {
+    "dock": "right",
+    "sidebar_side": "right",
+    "favorite_models": [],
+    "model_parameters": [],
+  },
+  "proxy": "",
+  "tabs": {
+    "git_status": true,
+    "file_icons": true,
+  },
+  "prettier": {
+    "allowed": true,
+  },
+  "minimap": {
+    "show": "always",
+  },
+  "auto_signature_help": true,
+  "show_signature_help_after_edits": true,
+  "which_key": {
+    "enabled": false,
+  },
+  "autosave": {
+    "after_delay": {
+      "milliseconds": 1000,
+    },
+  },
+  "ui_font_weight": 400.0,
+  "ui_font_family": "JetBrainsMono Nerd Font",
+  "buffer_font_weight": 400.0,
+  "buffer_font_family": "JetBrainsMono Nerd Font",
+  "icon_theme": "Material Icon Theme",
+  "terminal": {
+    "dock": "bottom",
+    "font_weight": 300.0,
+    "font_family": "JetBrainsMono Nerd Font",
+    "font_size": 13.0,
+  },
+  "project_panel": {
+    "dock": "left",
   },
   "telemetry": {
     "diagnostics": false,
-    "metrics": false
-  }
+    "metrics": false,
+  },
+  "session": {
+    "trust_all_worktrees": true,
+  },
+  "agent_servers": {
+    "opencode": {
+      "type": "registry",
+    },
+    "claude-acp": {
+      "type": "registry",
+    },
+    "codex-acp": {
+      "type": "registry",
+    },
+    "cursor": {
+      "type": "registry",
+    },
+  },
+  "base_keymap": "JetBrains",
+  "ui_font_size": 15.0,
+  "buffer_font_size": 15.0,
+  "theme": {
+    "mode": "system",
+    "light": "One Light",
+    "dark": "One Dark",
+  },
 }
