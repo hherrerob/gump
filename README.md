@@ -36,7 +36,6 @@ Options included so far:
 
 - CLI tools: ripgrep, fd, bat, fzf, jq, htop
 - fastfetch: System info at a glance
-- Git: Version control
 
 </details>
 
@@ -63,6 +62,17 @@ Options included so far:
 
 - Visual Studio Code: Code editor
 - Zed: Fast collaborative code editor
+
+</details>
+
+<details>
+<summary><b>Git &amp; forges</b></summary>
+
+- Forgejo CLI (cli): fj: Forgejo repos, PRs and issues (Codeberg and self-hosted)
+- Git (cli): Version control
+- Gitea CLI (cli): tea: Gitea repos, PRs and issues (also works with Forgejo)
+- GitHub CLI (cli): gh: GitHub repos, PRs, issues and Actions
+- GitLab CLI (cli): glab: GitLab merge requests, issues and pipelines
 
 </details>
 

@@ -1,5 +1,6 @@
 name = "Forgejo CLI"
 description = "fj: Forgejo repos, PRs and issues (Codeberg and self-hosted)"
+cli = true
 
 # Fedora: the latest release binary from Codeberg into ~/.local/bin.
 [install.fedora]

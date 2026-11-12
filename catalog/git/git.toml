@@ -1,5 +1,6 @@
 name = "Git"
 description = "Version control"
+cli = true
 
 [install.fedora]
 dnf = ["git"]

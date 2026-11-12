@@ -1,5 +1,6 @@
 name = "GitHub CLI"
 description = "gh: GitHub repos, PRs, issues and Actions"
+cli = true
 
 [install.fedora]
 dnf = ["gh"]

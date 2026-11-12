@@ -1,5 +1,6 @@
 name = "Gitea CLI"
 description = "tea: Gitea repos, PRs and issues (also works with Forgejo)"
+cli = true
 
 # Fedora: the latest release binary from dl.gitea.com into ~/.local/bin.
 # Not on Arch: no pacman/AUR package.

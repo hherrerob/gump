@@ -1,5 +1,6 @@
 name = "GitLab CLI"
 description = "glab: GitLab merge requests, issues and pipelines"
+cli = true
 
 [install.fedora]
 dnf = ["glab"]
