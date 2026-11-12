@@ -1,0 +1,25 @@
+name = "Forgejo CLI"
+description = "fj: Forgejo repos, PRs and issues (Codeberg and self-hosted)"
+
+# Fedora: the latest release binary from Codeberg into ~/.local/bin.
+[install.fedora]
+script = '''
+set -e
+case "$(uname -m)" in x86_64) arch=x86_64 ;; aarch64) arch=aarch64 ;; *) echo "unsupported arch" >&2; exit 1 ;; esac
+tag=$(curl -fsSL https://codeberg.org/api/v1/repos/forgejo-contrib/forgejo-cli/releases/latest | sed -n 's/.*"tag_name":"\([^"]*\)".*/\1/p')
+[ -n "$tag" ] || { echo "couldn't find the latest forgejo-cli release" >&2; exit 1; }
+tmp=$(mktemp -d)
+curl -fsSL "https://codeberg.org/forgejo-contrib/forgejo-cli/releases/download/$tag/forgejo-cli-$arch-linux.tar.gz" | tar -xz -C "$tmp"
+install -Dm755 "$tmp/fj" "$HOME/.local/bin/fj"
+rm -rf "$tmp"
+'''
+
+[install.arch]
+pacman = ["forgejo-cli"]
+
+[install.macos]
+brew = ["forgejo-cli"]
+
+[check]
+command = "fj"
+path = "~/.local/bin/fj"

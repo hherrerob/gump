@@ -1,0 +1,11 @@
+name = "GitHub CLI"
+description = "gh: GitHub repos, PRs, issues and Actions"
+
+[install.fedora]
+dnf = ["gh"]
+
+[install.arch]
+pacman = ["github-cli"]
+
+[install.macos]
+brew = ["gh"]
