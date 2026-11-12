@@ -34,6 +34,10 @@ id = "containers"
 name = "Containers"
 
 [[category]]
+id = "design"
+name = "Design"
+
+[[category]]
 id = "making"
 name = "Making"
 
