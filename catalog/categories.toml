@@ -18,6 +18,10 @@ id = "editors"
 name = "Editors"
 
 [[category]]
+id = "git"
+name = "Git & forges"
+
+[[category]]
 id = "browsers"
 name = "Browsers"
 

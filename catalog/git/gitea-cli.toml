@@ -1,0 +1,23 @@
+name = "Gitea CLI"
+description = "tea: Gitea repos, PRs and issues (also works with Forgejo)"
+
+# Fedora: the latest release binary from dl.gitea.com into ~/.local/bin.
+# Not on Arch: no pacman/AUR package.
+[install.fedora]
+script = '''
+set -e
+case "$(uname -m)" in x86_64) arch=amd64 ;; aarch64) arch=arm64 ;; *) echo "unsupported arch" >&2; exit 1 ;; esac
+v=$(curl -fsSL https://dl.gitea.com/tea/version.json | sed -n 's/.*"version":"\([^"]*\)".*/\1/p')
+[ -n "$v" ] || { echo "couldn't find the latest tea version" >&2; exit 1; }
+tmp=$(mktemp)
+curl -fsSL -o "$tmp" "https://dl.gitea.com/tea/$v/tea-$v-linux-$arch"
+install -Dm755 "$tmp" "$HOME/.local/bin/tea"
+rm -f "$tmp"
+'''
+
+[install.macos]
+brew = ["tea"]
+
+[check]
+command = "tea"
+path = "~/.local/bin/tea"
