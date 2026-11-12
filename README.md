@@ -7,7 +7,7 @@ them with the native package manager and copies my configs. Safe to re-run: inst
 are skipped, existing configs are kept.
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/CHANGEME/gump/main/bootstrap.sh | sh
+curl -fsSL https://raw.githubusercontent.com/hherrerob/gump/main/bootstrap.sh | sh
 ```
 
 ## Usage

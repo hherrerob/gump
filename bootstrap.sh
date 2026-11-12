@@ -1,10 +1,10 @@
 #!/bin/sh
 # Fresh-install bootstrap: downloads the gump binary for this machine and starts the wizard.
-#   curl -fsSL https://raw.githubusercontent.com/<you>/gump/main/bootstrap.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/hherrerob/gump/main/bootstrap.sh | sh
 # Set GUMP_REPO=owner/repo to point at a fork. Only needs curl.
 set -eu
 
-REPO="${GUMP_REPO:-CHANGEME/gump}"
+REPO="${GUMP_REPO:-hherrerob/gump}"
 DEST="${GUMP_BIN_DIR:-$HOME/.local/bin}"
 
 case "$(uname -s)" in
