@@ -134,7 +134,9 @@ fn select(f: &mut Frame, w: &mut Wizard, area: Rect) {
 
     let visible = w.visible_apps();
     // Pad names to the longest visible one, plus a clear gap before the badges.
-    let name_w = visible.iter().map(|&i| w.cat.apps[i].name.chars().count()).max().unwrap_or(0) + 4;
+    const CLI: &str = " (cli)";
+    let label_w = |a: &crate::catalog::App| a.name.chars().count() + if a.cli { CLI.len() } else { 0 };
+    let name_w = visible.iter().map(|&i| label_w(&w.cat.apps[i])).max().unwrap_or(0) + 4;
     let items: Vec<ListItem> = visible
         .iter()
         .map(|&i| {
@@ -147,7 +149,14 @@ fn select(f: &mut Frame, w: &mut Wizard, area: Rect) {
             } else {
                 (Span::styled("○  ", t::fg(t::MUTED)), t::fg(t::TEXT))
             };
-            let mut spans = vec![mark, Span::styled(format!("{:<name_w$}", a.name), name_style)];
+            let tag = if a.cli { CLI } else { "" };
+            let pad = " ".repeat(name_w - label_w(a));
+            let mut spans = vec![
+                mark,
+                Span::styled(a.name.clone(), name_style),
+                Span::styled(tag, t::fg(t::MUTED)),
+                Span::raw(pad),
+            ];
             if !s.available {
                 spans.push(Span::styled("not on this OS", t::fg(t::LINE).italic()));
             } else {

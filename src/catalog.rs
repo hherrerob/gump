@@ -66,6 +66,9 @@ struct Manifest {
     description: String,
     #[serde(default)]
     depends: Vec<String>,
+    /// Terminal-only: no desktop launcher, you start it from a shell. Shown as "(cli)".
+    #[serde(default)]
+    cli: bool,
     #[serde(default)]
     install: InstallMap,
     /// Extra packages that belong to the app's configuration (e.g. zsh plugins). They are treated
@@ -205,6 +208,7 @@ pub struct App {
     pub name: String,
     pub description: String,
     pub depends: Vec<String>,
+    pub cli: bool,
     pub install: InstallMap,
     pub extras: InstallMap,
     pub check: Option<Check>,
@@ -300,6 +304,7 @@ impl Catalog {
                 name: manifest.name,
                 description: manifest.description,
                 depends: manifest.depends,
+                cli: manifest.cli,
                 install: manifest.install,
                 extras: manifest.extras,
                 check: manifest.check,

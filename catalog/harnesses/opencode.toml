@@ -1,5 +1,6 @@
 name = "OpenCode"
 description = "Open-source coding agent for any model provider"
+cli = true
 
 # Fedora: the binary from the latest GitHub release into ~/.local/bin.
 [install.fedora]

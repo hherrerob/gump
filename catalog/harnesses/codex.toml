@@ -1,5 +1,6 @@
 name = "Codex"
 description = "OpenAI's coding agent in the terminal"
+cli = true
 
 # Fedora: the static binary from the latest GitHub release into ~/.local/bin.
 [install.fedora]

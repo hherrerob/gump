@@ -1,5 +1,6 @@
 name = "Claude Code"
 description = "Anthropic's coding agent in the terminal"
+cli = true
 
 # Fedora: Anthropic's native installer (~/.local/bin/claude, self-updating).
 [install.fedora]

@@ -1,0 +1,13 @@
+# ~/.config/herdr/config.toml (from gump)
+# Validate with `herdr config check`; apply to a running server with `herdr server reload-config`.
+
+onboarding = false
+
+[theme]
+# Built-in: catppuccin, terminal, tokyo-night, dracula, nord, gruvbox, one-dark, solarized,
+#           kanagawa, rose-pine, vesper (most have a light variant, e.g. one-light)
+# Follow the terminal's light/dark appearance, like Zed's One Dark / One Light.
+name = "one-dark"
+auto_switch = true
+dark_name = "one-dark"
+light_name = "one-light"
