@@ -117,6 +117,13 @@ Options included so far:
 </details>
 
 <details>
+<summary><b>Design</b></summary>
+
+- Penpot: Design and prototyping, self-hosted in Docker (runs only on `penpot start`)
+
+</details>
+
+<details>
 <summary><b>Making</b></summary>
 
 - Backplane: Agentic CAD, a KiCad fork (alpha)
