@@ -1,0 +1,27 @@
+name = "Penpot"
+description = "Design and prototyping, self-hosted in Docker (runs only on `penpot start`)"
+depends = ["docker"]
+
+# The app is a Docker Compose stack (the settings below) plus a `penpot` command that starts
+# and stops it. Nothing runs at boot: `penpot start` brings it up on http://localhost:9001 and
+# `penpot stop` takes it down again. Installing writes the command; the images download on the
+# first start.
+[install.fedora]
+post = ['''mkdir -p ~/.local/bin && printf '#!/bin/sh\nexec sh "${XDG_CONFIG_HOME:-$HOME/.config}/penpot/penpot.sh" "$@"\n' > ~/.local/bin/penpot && chmod +x ~/.local/bin/penpot''']
+
+[install.arch]
+post = ['''mkdir -p ~/.local/bin && printf '#!/bin/sh\nexec sh "${XDG_CONFIG_HOME:-$HOME/.config}/penpot/penpot.sh" "$@"\n' > ~/.local/bin/penpot && chmod +x ~/.local/bin/penpot''']
+
+[install.macos]
+post = ['''mkdir -p ~/.local/bin && printf '#!/bin/sh\nexec sh "${XDG_CONFIG_HOME:-$HOME/.config}/penpot/penpot.sh" "$@"\n' > ~/.local/bin/penpot && chmod +x ~/.local/bin/penpot''']
+
+[check]
+path = "~/.local/bin/penpot"
+
+[[settings]]
+source = "docker-compose.yaml"
+target = "~/.config/penpot/docker-compose.yaml"
+
+[[settings]]
+source = "penpot.sh"
+target = "~/.config/penpot/penpot.sh"
